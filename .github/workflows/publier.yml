@@ -1,0 +1,39 @@
+name: Publier
+on:
+  workflow_dispatch:
+  push:
+    paths: ['posts/queue.json']
+permissions:
+  contents: write
+jobs:
+  publier:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Publier les posts en attente
+        env:
+          FB_PAGE_TOKEN: ${{ secrets.FB_PAGE_TOKEN }}
+          FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
+        run: |
+          FILE=posts/queue.json
+          COUNT=$(jq length "$FILE")
+          for i in $(seq 0 $((COUNT-1))); do
+            [ "$(jq -r ".[$i].status" "$FILE")" != "pending" ] && continue
+            MSG=$(jq -r ".[$i].message" "$FILE")
+            RES=$(curl -s -X POST "https://graph.facebook.com/v26.0/$FB_PAGE_ID/feed" \
+              --data-urlencode "message=$MSG" \
+              --data-urlencode "access_token=$FB_PAGE_TOKEN")
+            POST_ID=$(echo "$RES" | jq -r '.id // empty')
+            if [ -n "$POST_ID" ]; then
+              jq ".[$i].status=\"published\" | .[$i].post_id=\"$POST_ID\"" "$FILE" > tmp.json && mv tmp.json "$FILE"
+            else
+              echo "Erreur sur le post $i : $(echo "$RES" | jq -c '.error.message')"
+              jq ".[$i].status=\"error\"" "$FILE" > tmp.json && mv tmp.json "$FILE"
+            fi
+          done
+      - name: Enregistrer
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git add posts/queue.json
+          git diff --cached --quiet || (git commit -m "Mise a jour des posts" && git push)
