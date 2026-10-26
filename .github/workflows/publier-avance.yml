@@ -1,0 +1,60 @@
+name: Publier avance (photo, video, programmation)
+on:
+  push:
+    paths:
+      - 'posts/avance.json'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  publier:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Publier
+        env:
+          FB_PAGE_TOKEN: ${{ secrets.FB_PAGE_TOKEN }}
+          FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
+        run: |
+          f=posts/avance.json
+          n=$(jq length $f)
+          for i in $(seq 0 $((n-1))); do
+            st=$(jq -r ".[$i].status" $f)
+            [ "$st" = "pending" ] || continue
+            msg=$(jq -r ".[$i].message // empty" $f)
+            img=$(jq -r ".[$i].image_path // empty" $f)
+            imgurl=$(jq -r ".[$i].image_url // empty" $f)
+            vid=$(jq -r ".[$i].video_path // empty" $f)
+            vidurl=$(jq -r ".[$i].video_url // empty" $f)
+            when=$(jq -r ".[$i].publish_at // empty" $f)
+            sched=()
+            if [ -n "$when" ]; then
+              ts=$(date -d "$when" +%s)
+              sched=(-F "published=false" -F "scheduled_publish_time=$ts")
+            fi
+            base="https://graph.facebook.com/v21.0/$FB_PAGE_ID"
+            if [ -n "$img" ]; then
+              res=$(curl -s -X POST "$base/photos" -F "source=@$img" --form-string "caption=$msg" "${sched[@]}" --form-string "access_token=$FB_PAGE_TOKEN")
+            elif [ -n "$imgurl" ]; then
+              res=$(curl -s -X POST "$base/photos" --form-string "url=$imgurl" --form-string "caption=$msg" "${sched[@]}" --form-string "access_token=$FB_PAGE_TOKEN")
+            elif [ -n "$vid" ]; then
+              res=$(curl -s -X POST "$base/videos" -F "source=@$vid" --form-string "description=$msg" "${sched[@]}" --form-string "access_token=$FB_PAGE_TOKEN")
+            elif [ -n "$vidurl" ]; then
+              res=$(curl -s -X POST "$base/videos" --form-string "file_url=$vidurl" --form-string "description=$msg" "${sched[@]}" --form-string "access_token=$FB_PAGE_TOKEN")
+            else
+              res=$(curl -s -X POST "$base/feed" --form-string "message=$msg" "${sched[@]}" --form-string "access_token=$FB_PAGE_TOKEN")
+            fi
+            pid=$(echo "$res" | jq -r '.post_id // .id // empty')
+            if [ -n "$pid" ]; then
+              if [ -n "$when" ]; then s=scheduled; else s=published; fi
+            else
+              s=error
+            fi
+            jq --argjson i "$i" --arg s "$s" --arg p "$pid" '.[$i].status=$s | .[$i].post_id=$p' $f > /tmp/r.json && mv /tmp/r.json $f
+          done
+      - name: Enregistrer dans le dépôt
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@users.noreply.github.com"
+          git add posts/avance.json
+          git diff --cached --quiet || (git commit -m "Publications avancées" && git push)

@@ -31,11 +31,8 @@ jobs:
                 res='{}'
               fi
               ok=$(echo "$res" | jq -r '.success // empty')
-              if [ "$ok" = "true" ]; then
-                jq ".[$i].status=\"done\"" $f > /tmp/r.json && mv /tmp/r.json $f
-              else
-                jq ".[$i].status=\"error\"" $f > /tmp/r.json && mv /tmp/r.json $f
-              fi
+              if [ "$ok" = "true" ]; then s=done; else s=error; fi
+              jq --argjson i "$i" --arg s "$s" '.[$i].status=$s' $f > /tmp/r.json && mv /tmp/r.json $f
             fi
           done
       - name: Enregistrer dans le dépôt
