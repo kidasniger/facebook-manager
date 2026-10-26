@@ -3,5 +3,10 @@
     "action": "delete",
     "post_id": "1330840526788040_122098767213525771",
     "status": "done"
+  },
+  {
+    "action": "delete",
+    "post_id": "1464579955860231",
+    "status": "pending"
   }
 ]
