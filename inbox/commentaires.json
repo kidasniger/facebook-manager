@@ -1,130 +1,238 @@
 {
-  "updated": "2026-10-26T18:51:55Z",
+  "updated": "2026-10-26T19:27:08Z",
   "page": {
+    "id": "1330840526788040",
     "name": "Aboubacar Sidik",
     "fan_count": 27,
-    "followers_count": 27,
-    "id": "1330840526788040"
+    "followers_count": 27
   },
-  "posts": {
-    "data": [
-      {
-        "id": "1330840526788040_122098513017525771",
-        "message": "Vous créez des animations ou des applications web ?\n\n🚀 Avec RENDRAX, découvrez une nouvelle façon de transformer vos animations HTML en vidéos MP4.\n\n🌐 Découvrez le projet : https://rendrax.vercel.app\n\n💬 Quel outil numérique vous ferait gagner le plus de temps dans votre travail ?\n\nDites-moi en commentaire !\n\n— Aboubacar Sidik | KI DAS\n\n#RENDRAX #DéveloppementWeb #Technologie",
-        "created_time": "2026-10-26T11:55:42+0000",
-        "likes": {
-          "data": [],
-          "summary": {
-            "total_count": 1,
-            "can_like": true,
-            "has_liked": true
+  "posts": [
+    {
+      "id": "1330840526788040_122098513017525771",
+      "message": "Vous créez des animations ou des applications web ?\n\n🚀 Avec RENDRAX, découvrez une nouvelle façon de transformer vos animations HTML en vidéos MP4.\n\n🌐 Découvrez le projet : https://rendrax.vercel.app\n\n💬 Quel outil numérique vous ferait gagner le plus de temps dans votre travail ?\n\nDites-moi en commentaire !\n\n— Aboubacar Sidik | KI DAS\n\n#RENDRAX #DéveloppementWeb #Technologie",
+      "created_time": "2026-10-26T11:55:42+0000",
+      "permalink_url": "https://www.facebook.com/122098757199525771/posts/122098513017525771",
+      "attachments": {
+        "data": [
+          {
+            "media_type": "photo",
+            "description": "Vous créez des animations ou des applications web ?\n\n🚀 Avec RENDRAX, découvrez une nouvelle façon de transformer vos animations HTML en vidéos MP4.\n\n🌐 Découvrez le projet : https://rendrax.vercel.app\n\n💬 Quel outil numérique vous ferait gagner le plus de temps dans votre travail ?\n\nDites-moi en commentaire !\n\n— Aboubacar Sidik | KI DAS\n\n#RENDRAX #DéveloppementWeb #Technologie"
           }
+        ]
+      },
+      "likes": {
+        "data": [],
+        "summary": {
+          "total_count": 1,
+          "can_like": true,
+          "has_liked": true
         }
       },
-      {
-        "id": "1330840526788040_122097372117525771",
-        "message": "🚀 Je vous présente RENDRAX !\n\nVous créez des animations en HTML et souhaitez les transformer en vidéos MP4 facilement ?\n\nJ'ai développé RENDRAX, un outil conçu pour simplifier cette conversion.\n\n🎬 Importez votre fichier HTML.\n⚙️ Configurez les paramètres de sortie.\n📥 Générez et téléchargez votre vidéo MP4.\n\nUne solution pensée pour rendre la conversion des animations web plus simple et accessible.\n\nDécouvrez la démonstration vidéo et dites-moi ce que vous en pensez !\n\n🌐 Essayez RENDRAX :\nhttps://rendrax.vercel.app\n\n— Aboubacar Sidik | KI DAS\n\n#RENDRAX #DéveloppementWeb #Innovation #OutilsNumériques",
-        "created_time": "2026-10-25T02:27:02+0000",
-        "likes": {
-          "data": [],
-          "summary": {
-            "total_count": 13,
-            "can_like": true,
-            "has_liked": true
-          }
-        },
-        "comments": {
-          "data": [
-            {
-              "id": "122097372117525771_1706304411496525",
-              "message": "@followers",
-              "created_time": "2026-10-26T18:47:52+0000"
-            }
-          ],
-          "paging": {
-            "cursors": {
-              "before": "MQZDZD",
-              "after": "MQZDZD"
-            }
-          }
-        }
-      },
-      {
-        "id": "1330840526788040_122097360135525771",
-        "message": "🇳🇪 Bienvenue sur mon univers numérique !\n\nJe suis Aboubacar Sidik, développeur et créateur numérique nigérien.\n\n💻 Je conçois des applications Android, des logiciels Windows, des sites web et des outils numériques à travers mes projets KI DAS.\n\nSur cette page, je partagerai mes réalisations, mes démonstrations, mes nouveautés et les coulisses de mon parcours de développeur.\n\n🌐 Découvrez mon portfolio :\nhttps://kidas-portfolio.web.app\n\n💬 Quelle application ou quel logiciel aimeriez-vous voir créé ? Proposez votre idée en commentaire.\n\n👍 Abonnez-vous pour suivre mes projets et leurs évolutions.\n\nAboubacar Sidik — KI DAS | Coder • Créer • Innover.\n\n#KiDas #Développement #Technologie #Innovation #OpenSource",
-        "created_time": "2026-10-25T02:11:39+0000",
-        "likes": {
-          "data": [],
-          "summary": {
-            "total_count": 4,
-            "can_like": true,
-            "has_liked": true
-          }
-        },
-        "comments": {
-          "data": [
-            {
-              "id": "122097360135525771_1440721577390919",
-              "message": "🤧bro tu connais déjà mon entreprise.. alors qu'elle contribution compte tu apporter pour mener a bien mon projet ? 🙄",
-              "created_time": "2026-10-25T20:23:58+0000"
-            },
-            {
-              "id": "122097360135525771_978482311420781",
-              "message": "Aboubacar Sidik Moussa Garba",
-              "created_time": "2026-10-26T18:41:31+0000"
-            }
-          ],
-          "paging": {
-            "cursors": {
-              "before": "MgZDZD",
-              "after": "MQZDZD"
-            }
-          }
-        }
-      },
-      {
-        "id": "1330840526788040_122096899629525771",
-        "message": "🚀 Découvrez RENDRAX !\n\nVous avez une animation HTML et vous souhaitez la transformer en vidéo ? 🎬\n\nAvec RENDRAX, convertissez vos animations HTML en vidéos MP4 facilement, directement en ligne.\n\n✅ Simple et pratique\n✅ Pas besoin d’installer un logiciel\n✅ Exportez vos animations en vidéo\n\n🔗 Essayez dès maintenant : https://rendrax.vercel.app\n\nRENDRAX — Du HTML à la vidéo, simplement.\n\n#RENDRAX #CréationVidéo #HTML #Technologie",
-        "created_time": "2026-10-24T13:04:04+0000",
-        "likes": {
-          "data": [],
-          "summary": {
-            "total_count": 3,
-            "can_like": true,
-            "has_liked": true
-          }
-        }
-      },
-      {
-        "id": "1330840526788040_122096871585525771",
-        "created_time": "2026-10-24T12:20:04+0000",
-        "likes": {
-          "data": [],
-          "summary": {
-            "total_count": 3,
-            "can_like": true,
-            "has_liked": true
-          }
-        }
-      },
-      {
-        "id": "1330840526788040_122096834607525771",
-        "created_time": "2026-10-24T11:28:40+0000",
-        "likes": {
-          "data": [],
-          "summary": {
-            "total_count": 3,
-            "can_like": true,
-            "has_liked": true
-          }
+      "comments": {
+        "data": [],
+        "summary": {
+          "order": "chronological",
+          "total_count": 0,
+          "can_comment": true
         }
       }
-    ],
-    "paging": {
-      "cursors": {
-        "before": "QVFIVG9Mem9Lb0tKSldLOG1BcVFxYmRMc1lQdjU1UEc2SFdTUlQ0d01EZAThzRVc3c2I1M1dNaktVYVZAMRkNfMHM0MkVtZAVhBRC1vT1JqRW4wRmVFejZAKOWV2YUdtUE5xenJlNGRaeEhRNGFoa2NKdE16RmFkeGJJcE5kdUdwMGtJMWU3dHBPbDlMWTZAHbFVXM1gtMlNjbkF6X2F0ZA3N2T3NhNU9oTDVPQ091T1hzeGFIeHJvMktsWnE5alFpS183YVVwS25kUldFSFdnMnZA2V2pocGd1UUp3N1BJLWtDTFlBTGNBRXUwT2dCUFBFYUMtX0NSc3YtUGVlV3dET0xhQnVseVpYdFI3VTZAVdlZAXdlhfU1Rfbmh3UGVaYmdxRkZAxa000QmpzZAmlKNndVeWZAQbDlRY2E2NEpPRklJeUhMNTQ1MC1DMm80LW16TTFkT0Y1MjBMY3M0ZAjlGckxNd1c2T0NTTDIxc2ZAqUHcyb2NGY2p4SXdPeFU0TmFCdnZA1RFJHWDlOOTBpcFM1b29nZAmdGV1VuY0ZA6aW9zVmJ2NXUyVXBORVBaTkdfczFMaWhkVm56ZAGp3QWp3c3p2ZADEzRTRQMWVlM3M0ellELWtkcjluQ1gyYkxqNlFaOEUzWEExUXkwRXB3dFNFTnRaakR3VEdtcUdpXzNfTUdtV2JDV0ZArU01GUHJZAYi1wd0NSTlJfV0tVNzBaY05Gd05UeTFIamhkNHA0YmJWMk9oV1pHNXhRTl9PWDBQUG5iOVI5cFZACODg5b3BfdwZDZD",
-        "after": "QVFIVHJEaWlXWjh1S1o1enVRMWdha1BBRzM2ZAFh4TmhyeVFib1dVdkw1MnBFUFdVWWxPaENDT0llM0JrX0RzVW1uNjdOZAWlaWG9WSmNuMXhpYWJRNFZAoNU5EN1NjMlZAFUENsQWFOMUF2WVBNRTdhU0phbFd3QndscG9ocDRrdGdIVTc0RTlhbm5PaFdtWUdiejEyckFoZAmZAOMVRjc1RhbU94ZAVpadGJEMzJYdlZAGMTVETndvTUhTSVpMZAHMtTWRWV19hbVgxMlUxV202bmp3c1p3TElleWpfeXdWcnNuNjZAOcUoyYk1CX25aQkNKTGZAGQ0ZA3NkEtdEgydHhsZA2lkRi1kbnJkVUd0WHgtRGRPMGE5emp3TFNLSFd3cnM0SW90MW1IdW94RUpBWjdRbzJ6RG9LR2tKaDJZAM3dkbVNMdWg3YmY2UEZAXN1F5Ul9LTkZABZAkhmTWttYnMwY3dBUGMxa1FKaEpYbDNHYlV6QzFyMWxmeGM5QkZAQRVZAzR3M2QzA4b0pTTWVkdkljN2d4V0QxSmRXZAFR1SzBzNUVIcWRyLTZAWNjQ4d3pHa19BS3dIR0lRdlQtRks2a0xsN1BKQXA5VWlWZATdLdjJ0UFBoOGU2LXlMQlVzTW1SUVhqQVlpMC1QNXFWWGk0M1VsYm9mLWFnVmppMmo3N0lJM20wZAWh0UTQzMGQ5YTB6WnRHdE5VOXo2YXRDaHQ2bEhDZAWI0andZANHR5R3o5Ung3dklYamJoUFhhOFJlT3R3N195NVhoX3NXaXlQeAZDZD"
+    },
+    {
+      "id": "1330840526788040_122097372117525771",
+      "message": "🚀 Je vous présente RENDRAX !\n\nVous créez des animations en HTML et souhaitez les transformer en vidéos MP4 facilement ?\n\nJ'ai développé RENDRAX, un outil conçu pour simplifier cette conversion.\n\n🎬 Importez votre fichier HTML.\n⚙️ Configurez les paramètres de sortie.\n📥 Générez et téléchargez votre vidéo MP4.\n\nUne solution pensée pour rendre la conversion des animations web plus simple et accessible.\n\nDécouvrez la démonstration vidéo et dites-moi ce que vous en pensez !\n\n🌐 Essayez RENDRAX :\nhttps://rendrax.vercel.app\n\n— Aboubacar Sidik | KI DAS\n\n#RENDRAX #DéveloppementWeb #Innovation #OutilsNumériques",
+      "created_time": "2026-10-25T02:27:02+0000",
+      "permalink_url": "https://www.facebook.com/reel/931947999798679/",
+      "attachments": {
+        "data": [
+          {
+            "media_type": "video"
+          }
+        ]
+      },
+      "likes": {
+        "data": [],
+        "summary": {
+          "total_count": 13,
+          "can_like": true,
+          "has_liked": true
+        }
+      },
+      "comments": {
+        "data": [
+          {
+            "id": "122097372117525771_1706304411496525",
+            "message": "@followers",
+            "created_time": "2026-10-26T18:47:52+0000",
+            "comment_count": 0,
+            "page_a_repondu": false
+          }
+        ],
+        "paging": {
+          "cursors": {
+            "before": "MQZDZD",
+            "after": "MQZDZD"
+          }
+        },
+        "summary": {
+          "order": "ranked",
+          "total_count": 1,
+          "can_comment": true
+        }
+      }
+    },
+    {
+      "id": "1330840526788040_122097360135525771",
+      "message": "🇳🇪 Bienvenue sur mon univers numérique !\n\nJe suis Aboubacar Sidik, développeur et créateur numérique nigérien.\n\n💻 Je conçois des applications Android, des logiciels Windows, des sites web et des outils numériques à travers mes projets KI DAS.\n\nSur cette page, je partagerai mes réalisations, mes démonstrations, mes nouveautés et les coulisses de mon parcours de développeur.\n\n🌐 Découvrez mon portfolio :\nhttps://kidas-portfolio.web.app\n\n💬 Quelle application ou quel logiciel aimeriez-vous voir créé ? Proposez votre idée en commentaire.\n\n👍 Abonnez-vous pour suivre mes projets et leurs évolutions.\n\nAboubacar Sidik — KI DAS | Coder • Créer • Innover.\n\n#KiDas #Développement #Technologie #Innovation #OpenSource",
+      "created_time": "2026-10-25T02:11:39+0000",
+      "permalink_url": "https://www.facebook.com/122098757199525771/posts/122097360135525771",
+      "likes": {
+        "data": [],
+        "summary": {
+          "total_count": 4,
+          "can_like": true,
+          "has_liked": true
+        }
+      },
+      "comments": {
+        "data": [
+          {
+            "id": "122097360135525771_1440721577390919",
+            "message": "🤧bro tu connais déjà mon entreprise.. alors qu'elle contribution compte tu apporter pour mener a bien mon projet ? 🙄",
+            "created_time": "2026-10-25T20:23:58+0000",
+            "comment_count": 1,
+            "comments": {
+              "data": [
+                {
+                  "id": "122097360135525771_1426491856134909",
+                  "message": "Aboubacar Assoumane je peux t'en créer un site web si tu veux 😏🙄",
+                  "created_time": "2026-10-25T21:17:36+0000",
+                  "from": {
+                    "id": "1330840526788040",
+                    "name": "Aboubacar Sidik"
+                  }
+                }
+              ],
+              "paging": {
+                "cursors": {
+                  "before": "QVFIVEYwQnJ0WmFPMWlhdHIySFpRRmJWNVBzYXN4aGREbllvdTU0dEF1VUE4V1dGSUREVzI4cWo3c1dhN1ZAEOHVrOWNSNG56UkJUc2hkQUlwQ05XSVkxZATZAR",
+                  "after": "QVFIVEYwQnJ0WmFPMWlhdHIySFpRRmJWNVBzYXN4aGREbllvdTU0dEF1VUE4V1dGSUREVzI4cWo3c1dhN1ZAEOHVrOWNSNG56UkJUc2hkQUlwQ05XSVkxZATZAR"
+                }
+              }
+            },
+            "page_a_repondu": true
+          },
+          {
+            "id": "122097360135525771_978482311420781",
+            "message": "Aboubacar Sidik Moussa Garba",
+            "created_time": "2026-10-26T18:41:31+0000",
+            "from": {
+              "id": "1330840526788040",
+              "name": "Aboubacar Sidik"
+            },
+            "comment_count": 0,
+            "page_a_repondu": false
+          }
+        ],
+        "paging": {
+          "cursors": {
+            "before": "MgZDZD",
+            "after": "MQZDZD"
+          }
+        },
+        "summary": {
+          "order": "ranked",
+          "total_count": 2,
+          "can_comment": true
+        }
+      }
+    },
+    {
+      "id": "1330840526788040_122096899629525771",
+      "message": "🚀 Découvrez RENDRAX !\n\nVous avez une animation HTML et vous souhaitez la transformer en vidéo ? 🎬\n\nAvec RENDRAX, convertissez vos animations HTML en vidéos MP4 facilement, directement en ligne.\n\n✅ Simple et pratique\n✅ Pas besoin d’installer un logiciel\n✅ Exportez vos animations en vidéo\n\n🔗 Essayez dès maintenant : https://rendrax.vercel.app\n\nRENDRAX — Du HTML à la vidéo, simplement.\n\n#RENDRAX #CréationVidéo #HTML #Technologie",
+      "created_time": "2026-10-24T13:04:04+0000",
+      "permalink_url": "https://www.facebook.com/122098757199525771/posts/122096899629525771",
+      "attachments": {
+        "data": [
+          {
+            "media_type": "photo",
+            "description": "🚀 Découvrez RENDRAX !\n\nVous avez une animation HTML et vous souhaitez la transformer en vidéo ? 🎬\n\nAvec RENDRAX, convertissez vos animations HTML en vidéos MP4 facilement, directement en ligne.\n\n✅ Simple et pratique\n✅ Pas besoin d’installer un logiciel\n✅ Exportez vos animations en vidéo\n\n🔗 Essayez dès maintenant : https://rendrax.vercel.app\n\nRENDRAX — Du HTML à la vidéo, simplement.\n\n#RENDRAX #CréationVidéo #HTML #Technologie"
+          }
+        ]
+      },
+      "likes": {
+        "data": [],
+        "summary": {
+          "total_count": 3,
+          "can_like": true,
+          "has_liked": true
+        }
+      },
+      "comments": {
+        "data": [],
+        "summary": {
+          "order": "chronological",
+          "total_count": 0,
+          "can_comment": true
+        }
+      }
+    },
+    {
+      "id": "1330840526788040_122096871585525771",
+      "created_time": "2026-10-24T12:20:04+0000",
+      "permalink_url": "https://www.facebook.com/reel/1048718414839325/",
+      "attachments": {
+        "data": [
+          {
+            "media_type": "video"
+          }
+        ]
+      },
+      "likes": {
+        "data": [],
+        "summary": {
+          "total_count": 3,
+          "can_like": true,
+          "has_liked": true
+        }
+      },
+      "comments": {
+        "data": [],
+        "summary": {
+          "order": "chronological",
+          "total_count": 0,
+          "can_comment": true
+        }
+      }
+    },
+    {
+      "id": "1330840526788040_122096834607525771",
+      "story": "Aboubacar Sidik a actualisé son statut.",
+      "created_time": "2026-10-24T11:28:40+0000",
+      "permalink_url": "https://www.facebook.com/122098757199525771/posts/122096834607525771",
+      "attachments": {
+        "data": [
+          {
+            "media_type": "link",
+            "description": "Ce problème vient généralement du fait que le propriétaire ne l’a partagé qu’avec un petit groupe de personnes, a modifié qui pouvait le voir ou l’a supprimé."
+          }
+        ]
+      },
+      "likes": {
+        "data": [],
+        "summary": {
+          "total_count": 3,
+          "can_like": true,
+          "has_liked": true
+        }
+      },
+      "comments": {
+        "data": [],
+        "summary": {
+          "order": "chronological",
+          "total_count": 0,
+          "can_comment": true
+        }
       }
     }
-  }
+  ]
 }
