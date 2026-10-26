@@ -1,1 +1,7 @@
-[{"message":"Test de publication automatique","status":"pending"}]
+[
+  {
+    "message": "Test de publication automatique",
+    "status": "published",
+    "post_id": "1330840526788040_122098727679525771"
+  }
+]
