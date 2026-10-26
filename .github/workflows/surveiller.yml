@@ -1,0 +1,27 @@
+name: Surveiller la Page
+on:
+  schedule:
+    - cron: '0 */3 * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  surveiller:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Récupérer commentaires et stats
+        env:
+          FB_PAGE_TOKEN: ${{ secrets.FB_PAGE_TOKEN }}
+          FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
+        run: |
+          mkdir -p inbox
+          curl -s -G "https://graph.facebook.com/v21.0/$FB_PAGE_ID" --data-urlencode "fields=name,fan_count,followers_count" --data-urlencode "access_token=$FB_PAGE_TOKEN" > /tmp/page.json
+          curl -s -G "https://graph.facebook.com/v21.0/$FB_PAGE_ID/posts" --data-urlencode "fields=id,message,created_time,likes.summary(true).limit(0),comments.limit(50){id,message,created_time}" --data-urlencode "limit=10" --data-urlencode "access_token=$FB_PAGE_TOKEN" > /tmp/posts.json
+          jq -n --slurpfile p /tmp/page.json --slurpfile o /tmp/posts.json '{updated: (now|todate), page: $p[0], posts: $o[0]}' > inbox/commentaires.json
+      - name: Enregistrer dans le dépôt
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@users.noreply.github.com"
+          git add inbox
+          git diff --cached --quiet || (git commit -m "Mise à jour inbox" && git push)
