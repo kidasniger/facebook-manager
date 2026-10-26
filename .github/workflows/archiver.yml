@@ -1,0 +1,59 @@
+name: Archiver la Page
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  archiver:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Télécharger tous les posts
+        env:
+          FB_PAGE_TOKEN: ${{ secrets.FB_PAGE_TOKEN }}
+          FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
+        run: |
+          python3 - << 'PYEOF'
+          import os, json, urllib.request, urllib.parse, urllib.error
+          tok = os.environ["FB_PAGE_TOKEN"]
+          pid = os.environ["FB_PAGE_ID"]
+          fields = "id,message,created_time,permalink_url,status_type,shares,likes.summary(true).limit(0),comments.summary(true).limit(0)"
+          url = "https://graph.facebook.com/v21.0/%s/posts?" % pid + urllib.parse.urlencode({"fields": fields, "limit": 50, "access_token": tok})
+          posts = []
+          while url:
+              try:
+                  data = json.load(urllib.request.urlopen(url, timeout=60))
+              except urllib.error.HTTPError as e:
+                  print("Erreur API, code", e.code)
+                  raise SystemExit(1)
+              except Exception as e:
+                  print("Erreur:", type(e).__name__)
+                  raise SystemExit(1)
+              for p in data.get("data", []):
+                  posts.append({
+                      "post_id": p.get("id"),
+                      "date": p.get("created_time"),
+                      "texte": p.get("message", ""),
+                      "type": p.get("status_type"),
+                      "lien": p.get("permalink_url"),
+                      "likes": p.get("likes", {}).get("summary", {}).get("total_count", 0),
+                      "commentaires": p.get("comments", {}).get("summary", {}).get("total_count", 0),
+                      "partages": p.get("shares", {}).get("count", 0),
+                  })
+              url = data.get("paging", {}).get("next")
+          par_annee = {}
+          for p in posts:
+              annee = (p["date"] or "0000")[:4]
+              par_annee.setdefault(annee, []).append(p)
+          os.makedirs("archive", exist_ok=True)
+          for annee, liste in par_annee.items():
+              with open("archive/posts-%s.json" % annee, "w", encoding="utf-8") as f:
+                  json.dump(liste, f, ensure_ascii=False, indent=2)
+          print(len(posts), "posts archivés")
+          PYEOF
+      - name: Enregistrer dans le dépôt
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add archive
+          git diff --cached --quiet || (git commit -m "Archive de la Page" && git pull --rebase && git push)
