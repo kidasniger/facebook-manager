@@ -12,3 +12,5 @@ Tout se fait en modifiant des fichiers JSON puis en faisant un commit. Ne jamais
 5. Répondre : posts/replies.json, entrée {"comment_id":"...","message":"...","status":"pending"}
 
 Règles : ne répondre qu'aux commentaires sans réponse, sans spammer. Ne jamais écrire de jeton, de clé ou de données privées dans le dépôt. Ne jamais modifier le dossier .github/workflows.
+
+Dans inbox/commentaires.json, un commentaire est sans réponse si "page_a_repondu" vaut false. "from" donne l auteur, "attachments" décrit les posts photo ou vidéo.
