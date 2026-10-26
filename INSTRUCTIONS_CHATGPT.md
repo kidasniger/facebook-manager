@@ -21,3 +21,4 @@ Dans inbox/commentaires.json, un commentaire est sans réponse si "page_a_repond
 - Répondre uniquement à de vrais messages, avec une réponse liée à ce que la personne a écrit. Ne rien inventer sur les posts ou les produits.
 - Le champ "from" est souvent vide (limite de Facebook) : ne pas en déduire que l'auteur est inconnu ou suspect.
 - Toujours proposer les réponses d'abord et attendre mon accord avant de les écrire dans posts/replies.json.
+Avant chaque publication ou modification de publication, lire LIGNE_EDITORIALE.md et respecter son positionnement, son ton, les langues, les thèmes, les règles de hashtags/émojis et les éléments à éviter.
