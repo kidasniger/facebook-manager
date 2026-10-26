@@ -1,0 +1,39 @@
+name: Répondre aux commentaires
+on:
+  push:
+    paths:
+      - 'posts/replies.json'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  repondre:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Publier les réponses
+        env:
+          FB_PAGE_TOKEN: ${{ secrets.FB_PAGE_TOKEN }}
+        run: |
+          f=posts/replies.json
+          n=$(jq length $f)
+          for i in $(seq 0 $((n-1))); do
+            st=$(jq -r ".[$i].status" $f)
+            if [ "$st" = "pending" ]; then
+              cid=$(jq -r ".[$i].comment_id" $f)
+              msg=$(jq -r ".[$i].message" $f)
+              res=$(curl -s -X POST "https://graph.facebook.com/v21.0/$cid/comments" --data-urlencode "message=$msg" --data-urlencode "access_token=$FB_PAGE_TOKEN")
+              rid=$(echo "$res" | jq -r '.id // empty')
+              if [ -n "$rid" ]; then
+                jq ".[$i].status=\"replied\" | .[$i].reply_id=\"$rid\"" $f > /tmp/r.json && mv /tmp/r.json $f
+              else
+                jq ".[$i].status=\"error\"" $f > /tmp/r.json && mv /tmp/r.json $f
+              fi
+            fi
+          done
+      - name: Enregistrer dans le dépôt
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@users.noreply.github.com"
+          git add posts/replies.json
+          git diff --cached --quiet || (git commit -m "Réponses envoyées" && git push)
