@@ -14,3 +14,10 @@ Tout se fait en modifiant des fichiers JSON puis en faisant un commit. Ne jamais
 Règles : ne répondre qu'aux commentaires sans réponse, sans spammer. Ne jamais écrire de jeton, de clé ou de données privées dans le dépôt. Ne jamais modifier le dossier .github/workflows.
 
 Dans inbox/commentaires.json, un commentaire est sans réponse si "page_a_repondu" vaut false. "from" donne l auteur, "attachments" décrit les posts photo ou vidéo.
+
+## Règles de réponse aux commentaires
+- Ne jamais répondre à un commentaire dont l'auteur est la Page elle-même.
+- Ignorer les commentaires de test (par exemple "@followers") et les simples mentions sans question ni message.
+- Répondre uniquement à de vrais messages, avec une réponse liée à ce que la personne a écrit. Ne rien inventer sur les posts ou les produits.
+- Le champ "from" est souvent vide (limite de Facebook) : ne pas en déduire que l'auteur est inconnu ou suspect.
+- Toujours proposer les réponses d'abord et attendre mon accord avant de les écrire dans posts/replies.json.
