@@ -1,0 +1,14 @@
+name: Test Facebook
+on: workflow_dispatch
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Lire la Page
+        env:
+          FB_PAGE_TOKEN: ${{ secrets.FB_PAGE_TOKEN }}
+          FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
+        run: |
+          curl -s -G "https://graph.facebook.com/v26.0/$FB_PAGE_ID" \
+            --data-urlencode "fields=name,fan_count" \
+            --data-urlencode "access_token=$FB_PAGE_TOKEN" | jq .
