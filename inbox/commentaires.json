@@ -1,12 +1,42 @@
 {
-  "updated": "2026-10-27T00:17:03Z",
+  "updated": "2026-10-27T08:47:42Z",
   "page": {
     "id": "1330840526788040",
     "name": "Aboubacar Sidik",
-    "fan_count": 27,
-    "followers_count": 27
+    "fan_count": 34,
+    "followers_count": 34
   },
   "posts": [
+    {
+      "id": "1330840526788040_122098929873525771",
+      "message": "🚀 **Nouvelle mise à jour de RENDRAX !**\n\nRENDRAX évolue avec une fonctionnalité qui permet de capturer un instant précis de votre animation HTML et de l’exporter sous forme d’image.\n\n🖼️ **Comment ça fonctionne ?**\nChoisissez le moment de l’animation que vous souhaitez conserver, puis exportez l’image dans le format adapté à vos besoins : **PNG, JPEG ou WebP**.\n\nCette nouveauté peut être utile pour créer des aperçus, des miniatures ou des visuels à partir de vos animations, sans devoir faire une capture d’écran manuelle.\n\nJe continue d’améliorer RENDRAX pour vous offrir davantage de possibilités dans la création numérique. 🛠️\n\n💬 **Quel format utilisez-vous le plus : PNG, JPEG ou WebP ?**\n\n#RENDRAX #MiseAJour #DéveloppementWeb #HTML #CréationNumérique #KIDAS #AboubacarSidik",
+      "created_time": "2026-10-27T01:01:26+0000",
+      "permalink_url": "https://www.facebook.com/122098757199525771/posts/122098929873525771",
+      "attachments": {
+        "data": [
+          {
+            "media_type": "photo",
+            "description": "🚀 **Nouvelle mise à jour de RENDRAX !**\n\nRENDRAX évolue avec une fonctionnalité qui permet de capturer un instant précis de votre animation HTML et de l’exporter sous forme d’image.\n\n🖼️ **Comment ça fonctionne ?**\nChoisissez le moment de l’animation que vous souhaitez conserver, puis exportez l’image dans le format adapté à vos besoins : **PNG, JPEG ou WebP**.\n\nCette nouveauté peut être utile pour créer des aperçus, des miniatures ou des visuels à partir de vos animations, sans devoir faire une capture d’écran manuelle.\n\nJe continue d’améliorer RENDRAX pour vous offrir davantage de possibilités dans la création numérique. 🛠️\n\n💬 **Quel format utilisez-vous le plus : PNG, JPEG ou WebP ?**\n\n#RENDRAX #MiseAJour #DéveloppementWeb #HTML #CréationNumérique #KIDAS #AboubacarSidik"
+          }
+        ]
+      },
+      "likes": {
+        "data": [],
+        "summary": {
+          "total_count": 2,
+          "can_like": true,
+          "has_liked": true
+        }
+      },
+      "comments": {
+        "data": [],
+        "summary": {
+          "order": "chronological",
+          "total_count": 0,
+          "can_comment": true
+        }
+      }
+    },
     {
       "id": "1330840526788040_122098903581525771",
       "message": "Créer un projet, ce n’est pas seulement écrire du code et espérer que tout fonctionne du premier coup.\n\nAvec RENDRAX, mon objectif est de faciliter la conversion d’animations HTML en vidéos MP4. Mais comme dans tout projet technique, chaque étape apporte son lot de défis et d’améliorations.\n\nJe partage ici mes projets, mes découvertes et mon parcours de développeur, une étape à la fois.\n\nLa programmation, c’est aussi apprendre en construisant. 🛠️\n\n#RENDRAX #KIDAS #AboubacarSidik #Développeur #Tech",
@@ -45,7 +75,7 @@
       "likes": {
         "data": [],
         "summary": {
-          "total_count": 2,
+          "total_count": 3,
           "can_like": true,
           "has_liked": true
         }
@@ -74,7 +104,7 @@
       "likes": {
         "data": [],
         "summary": {
-          "total_count": 13,
+          "total_count": 14,
           "can_like": true,
           "has_liked": true
         }
@@ -110,7 +140,7 @@
       "likes": {
         "data": [],
         "summary": {
-          "total_count": 4,
+          "total_count": 5,
           "can_like": true,
           "has_liked": true
         }
@@ -184,7 +214,7 @@
       "likes": {
         "data": [],
         "summary": {
-          "total_count": 3,
+          "total_count": 4,
           "can_like": true,
           "has_liked": true
         }
@@ -212,7 +242,7 @@
       "likes": {
         "data": [],
         "summary": {
-          "total_count": 3,
+          "total_count": 4,
           "can_like": true,
           "has_liked": true
         }
@@ -242,7 +272,7 @@
       "likes": {
         "data": [],
         "summary": {
-          "total_count": 3,
+          "total_count": 4,
           "can_like": true,
           "has_liked": true
         }
