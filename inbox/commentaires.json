@@ -1,10 +1,10 @@
 {
-  "updated": "2026-10-27T08:47:42Z",
+  "updated": "2026-10-27T13:43:37Z",
   "page": {
     "id": "1330840526788040",
     "name": "Aboubacar Sidik",
-    "fan_count": 34,
-    "followers_count": 34
+    "fan_count": 41,
+    "followers_count": 41
   },
   "posts": [
     {
@@ -75,7 +75,7 @@
       "likes": {
         "data": [],
         "summary": {
-          "total_count": 3,
+          "total_count": 4,
           "can_like": true,
           "has_liked": true
         }
