@@ -22,3 +22,13 @@ Dans inbox/commentaires.json, un commentaire est sans réponse si "page_a_repond
 - Le champ "from" est souvent vide (limite de Facebook) : ne pas en déduire que l'auteur est inconnu ou suspect.
 - Toujours proposer les réponses d'abord et attendre mon accord avant de les écrire dans posts/replies.json.
 Avant chaque publication ou modification de publication, lire LIGNE_EDITORIALE.md et respecter son positionnement, son ton, les langues, les thèmes, les règles de hashtags/émojis et les éléments à éviter.
+
+## Audit complet
+
+Pour lancer un audit complet de la Page Facebook :
+1. Mettre à jour `audit/demande.json` avec un objet de la forme `{"status":"demande","date":"<date et heure UTC>"}`, en utilisant la date et l'heure UTC réelles de la demande, puis faire un commit.
+2. Le workflow `audit.yml` lance les tâches `surveiller`, `statistiques`, `archiver` et `archive-mensuelle`. L'exécution peut prendre environ 5 minutes.
+3. Attendre que `audit/resultat.json` contienne une date strictement plus récente que celle de la demande. Ne pas interpréter un ancien résultat comme celui du nouvel audit.
+4. Après cette confirmation, lire `inbox/commentaires.json`, `inbox/statistiques.json` et les fichiers pertinents de `archive/`, puis rédiger un rapport couvrant les publications, l'engagement, les commentaires sans réponse et les points à améliorer.
+5. Pendant toute la durée de l'audit, ne publier aucun contenu, ne modifier aucune publication et ne répondre à aucun commentaire sans l'accord explicite de l'utilisateur. L'audit est une opération de lecture et de collecte de données ; ne lancer aucune autre action de publication ou de réponse.
+
