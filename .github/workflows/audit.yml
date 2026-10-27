@@ -7,6 +7,9 @@ on:
 permissions:
   contents: write
   actions: write
+concurrency:
+  group: audit
+  cancel-in-progress: false
 jobs:
   audit:
     runs-on: ubuntu-latest
@@ -22,10 +25,10 @@ jobs:
           done
       - name: Signaler la fin
         run: |
-          printf '{"termine":"%s","workflows":["surveiller","statistiques","archiver","archive-mensuelle"]}\n' "$(date -u +%FT%TZ)" > audit/resultat.json
           git config user.name "github-actions"
           git config user.email "actions@github.com"
+          git pull -q --rebase
+          printf '{"termine":"%s","workflows":["surveiller","statistiques","archiver","archive-mensuelle"]}\n' "$(date -u +%FT%TZ)" > audit/resultat.json
           git add audit/resultat.json
           git commit -q -m "Audit termine"
-          git pull -q --rebase
           git push -q
