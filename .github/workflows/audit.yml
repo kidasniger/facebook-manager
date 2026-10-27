@@ -1,0 +1,31 @@
+name: Audit complet
+on:
+  push:
+    paths:
+      - "audit/demande.json"
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: write
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Lancer les lectures
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for w in surveiller statistiques archiver archive-mensuelle; do
+            gh workflow run "$w.yml" && echo "lance: $w"
+            sleep 60
+          done
+      - name: Signaler la fin
+        run: |
+          printf '{"termine":"%s","workflows":["surveiller","statistiques","archiver","archive-mensuelle"]}\n' "$(date -u +%FT%TZ)" > audit/resultat.json
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add audit/resultat.json
+          git commit -q -m "Audit termine"
+          git pull -q --rebase
+          git push -q
