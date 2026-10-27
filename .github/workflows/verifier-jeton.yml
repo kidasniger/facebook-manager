@@ -1,0 +1,14 @@
+name: Verifier jeton
+on: workflow_dispatch
+jobs:
+  verifier:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Infos du jeton
+        env:
+          T: ${{ secrets.FB_PAGE_TOKEN }}
+        run: |
+          curl -s -G "https://graph.facebook.com/v26.0/debug_token" \
+            --data-urlencode "input_token=$T" \
+            --data-urlencode "access_token=$T" \
+            | jq '.data | {type, is_valid, expires_at, data_access_expires_at, scopes}'
