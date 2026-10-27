@@ -21,7 +21,9 @@ jobs:
         run: |
           for w in surveiller statistiques archiver archive-mensuelle; do
             gh workflow run "$w.yml" && echo "lance: $w"
-            sleep 60
+            sleep 6
+            id=$(gh run list --workflow="$w.yml" --limit 1 --json databaseId -q '.[0].databaseId')
+            gh run watch "$id" --exit-status >/dev/null && echo "termine: $w" || echo "echec: $w"
           done
       - name: Signaler la fin
         run: |
