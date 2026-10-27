@@ -1,88 +1,26 @@
 {
-  "date": "2026-10-27T13:56:03.053994Z",
+  "date": "2026-10-27T20:43:47.513595Z",
   "metriques": {
-    "page_post_engagements": [
-      {
-        "nom": "page_post_engagements",
-        "valeurs": [
-          {
-            "date": "2026-10-25T07:00:00+0000",
-            "valeur": 20
-          },
-          {
-            "date": "2026-10-26T07:00:00+0000",
-            "valeur": 25
-          }
-        ]
-      }
-    ],
-    "page_impressions_unique": {
-      "erreur": "(#100) The value must be a valid insights metric"
+    "page_post_engagements": {
+      "erreur": "API access blocked."
     },
-    "page_media_view": [
-      {
-        "nom": "page_media_view",
-        "valeurs": [
-          {
-            "date": "2026-10-25T07:00:00+0000",
-            "valeur": 390
-          },
-          {
-            "date": "2026-10-26T07:00:00+0000",
-            "valeur": 1047
-          }
-        ]
-      }
-    ],
-    "page_views_total": [
-      {
-        "nom": "page_views_total",
-        "valeurs": [
-          {
-            "date": "2026-10-25T07:00:00+0000",
-            "valeur": 44
-          },
-          {
-            "date": "2026-10-26T07:00:00+0000",
-            "valeur": 37
-          }
-        ]
-      }
-    ],
-    "page_follows": [
-      {
-        "nom": "page_follows",
-        "valeurs": [
-          {
-            "date": "2026-10-25T07:00:00+0000",
-            "valeur": 16
-          },
-          {
-            "date": "2026-10-26T07:00:00+0000",
-            "valeur": 23
-          }
-        ]
-      }
-    ],
-    "page_daily_follows_unique": [
-      {
-        "nom": "page_daily_follows_unique",
-        "valeurs": [
-          {
-            "date": "2026-10-25T07:00:00+0000",
-            "valeur": 16
-          },
-          {
-            "date": "2026-10-26T07:00:00+0000",
-            "valeur": 7
-          }
-        ]
-      }
-    ]
+    "page_impressions_unique": {
+      "erreur": "API access blocked."
+    },
+    "page_media_view": {
+      "erreur": "API access blocked."
+    },
+    "page_views_total": {
+      "erreur": "API access blocked."
+    },
+    "page_follows": {
+      "erreur": "API access blocked."
+    },
+    "page_daily_follows_unique": {
+      "erreur": "API access blocked."
+    }
   },
   "page": {
-    "name": "Aboubacar Sidik",
-    "fan_count": 41,
-    "followers_count": 41
+    "erreur": "API access blocked."
   }
 }
