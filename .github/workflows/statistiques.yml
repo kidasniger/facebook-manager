@@ -1,0 +1,54 @@
+name: Statistiques de la Page
+on:
+  schedule:
+    - cron: "0 7 * * 1"
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  stats:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Lire les statistiques
+        env:
+          FB_PAGE_TOKEN: ${{ secrets.FB_PAGE_TOKEN }}
+          FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
+        run: |
+          python3 - << 'PYEOF'
+          import os, json, urllib.request, urllib.parse, urllib.error, datetime
+          tok = os.environ["FB_PAGE_TOKEN"]
+          pid = os.environ["FB_PAGE_ID"]
+          G = "https://graph.facebook.com/v21.0/"
+          def get(path, params):
+              params["access_token"] = tok
+              try:
+                  return json.load(urllib.request.urlopen(G + path + "?" + urllib.parse.urlencode(params), timeout=60))
+              except urllib.error.HTTPError as e:
+                  try:
+                      return {"erreur": json.load(e)["error"].get("message", "")[:150]}
+                  except Exception:
+                      return {"erreur": "HTTP %s" % e.code}
+              except Exception as e:
+                  return {"erreur": type(e).__name__}
+          out = {"date": datetime.datetime.utcnow().isoformat() + "Z", "metriques": {}}
+          out["page"] = get(pid, {"fields": "name,fan_count,followers_count"})
+          out["page"].pop("id", None)
+          for m in ["page_post_engagements", "page_impressions_unique", "page_media_view", "page_views_total", "page_follows", "page_daily_follows_unique"]:
+              d = get(pid + "/insights", {"metric": m, "period": "day"})
+              if "erreur" in d:
+                  out["metriques"][m] = d
+              else:
+                  out["metriques"][m] = [{"nom": x.get("name"), "valeurs": [{"date": v.get("end_time"), "valeur": v.get("value")} for v in x.get("values", [])[-7:]]} for x in d.get("data", [])]
+          os.makedirs("inbox", exist_ok=True)
+          with open("inbox/statistiques.json", "w", encoding="utf-8") as f:
+              json.dump(out, f, ensure_ascii=False, indent=2)
+          ok = [k for k, v in out["metriques"].items() if isinstance(v, list)]
+          print("Indicateurs lus:", len(ok), "sur", len(out["metriques"]))
+          PYEOF
+      - name: Enregistrer
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add inbox/statistiques.json
+          git diff --cached --quiet || (git commit -q -m "Statistiques" && git pull -q --rebase && git push -q)
