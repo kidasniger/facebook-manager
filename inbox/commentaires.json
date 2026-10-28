@@ -1,22 +1,52 @@
 {
-  "updated": "2026-10-27T15:14:00Z",
+  "updated": "2026-10-28T20:41:44Z",
   "page": {
     "id": "1330840526788040",
     "name": "Aboubacar Sidik",
-    "fan_count": 42,
-    "followers_count": 42
+    "fan_count": 53,
+    "followers_count": 53
   },
   "posts": [
     {
-      "id": "1330840526788040_122098929873525771",
-      "message": "🚀 **Nouvelle mise à jour de RENDRAX !**\n\nRENDRAX évolue avec une fonctionnalité qui permet de capturer un instant précis de votre animation HTML et de l’exporter sous forme d’image.\n\n🖼️ **Comment ça fonctionne ?**\nChoisissez le moment de l’animation que vous souhaitez conserver, puis exportez l’image dans le format adapté à vos besoins : **PNG, JPEG ou WebP**.\n\nCette nouveauté peut être utile pour créer des aperçus, des miniatures ou des visuels à partir de vos animations, sans devoir faire une capture d’écran manuelle.\n\nJe continue d’améliorer RENDRAX pour vous offrir davantage de possibilités dans la création numérique. 🛠️\n\n💬 **Quel format utilisez-vous le plus : PNG, JPEG ou WebP ?**\n\n#RENDRAX #MiseAJour #DéveloppementWeb #HTML #CréationNumérique #KIDAS #AboubacarSidik",
-      "created_time": "2026-10-27T01:01:26+0000",
-      "permalink_url": "https://www.facebook.com/122098757199525771/posts/122098929873525771",
+      "id": "1330840526788040_122100180111525771",
+      "message": "Si je vous disais qu'il existe une façon de créer un IA agent automatisé pour s'occuper de sa page Facebook :\n- suivre ses statistiques \n- créer des publications (photo, vidéos)\n- répondre aux commentaires\nEt même étant absent grâce à Facebook developpeur",
+      "created_time": "2026-10-28T07:23:45+0000",
+      "permalink_url": "https://www.facebook.com/122100903819525771/posts/122100180111525771",
       "attachments": {
         "data": [
           {
             "media_type": "photo",
-            "description": "🚀 **Nouvelle mise à jour de RENDRAX !**\n\nRENDRAX évolue avec une fonctionnalité qui permet de capturer un instant précis de votre animation HTML et de l’exporter sous forme d’image.\n\n🖼️ **Comment ça fonctionne ?**\nChoisissez le moment de l’animation que vous souhaitez conserver, puis exportez l’image dans le format adapté à vos besoins : **PNG, JPEG ou WebP**.\n\nCette nouveauté peut être utile pour créer des aperçus, des miniatures ou des visuels à partir de vos animations, sans devoir faire une capture d’écran manuelle.\n\nJe continue d’améliorer RENDRAX pour vous offrir davantage de possibilités dans la création numérique. 🛠️\n\n💬 **Quel format utilisez-vous le plus : PNG, JPEG ou WebP ?**\n\n#RENDRAX #MiseAJour #DéveloppementWeb #HTML #CréationNumérique #KIDAS #AboubacarSidik"
+            "description": "Si je vous disais qu'il existe une façon de créer un IA agent automatisé pour s'occuper de sa page Facebook :\n- suivre ses statistiques \n- créer des publications (photo, vidéos)\n- répondre aux commentaires\nEt même étant absent grâce à Facebook developpeur"
+          }
+        ]
+      },
+      "likes": {
+        "data": [],
+        "summary": {
+          "total_count": 4,
+          "can_like": true,
+          "has_liked": true
+        }
+      },
+      "comments": {
+        "data": [],
+        "summary": {
+          "order": "chronological",
+          "total_count": 0,
+          "can_comment": true
+        }
+      }
+    },
+    {
+      "id": "1330840526788040_122099796507525771",
+      "message": "💻 Un petit détail peut faire toute la différence sur un site web.\n\nQuand tu crées un site, ne vérifie pas seulement s’il fonctionne sur ton ordinateur. Pense aussi à l’ouvrir sur un téléphone.\n\nVoici 3 choses à vérifier avant de le partager :\n\n- Est-ce que le texte reste facile à lire sur un petit écran ?\n- Est-ce que les boutons sont faciles à utiliser ?\n- Est-ce que les images et les liens fonctionnent correctement ?\n\nUn site peut être beau sur ordinateur et devenir difficile à utiliser sur mobile. C’est pour ça qu’il faut toujours tester les deux.\n\nDéveloppeurs et créateurs de sites : quelle vérification faites-vous toujours avant de mettre un site en ligne ?\n\n#KIDAS #DéveloppementWeb #CréationDeSites #Technologie",
+      "created_time": "2026-10-27T21:36:44+0000",
+      "permalink_url": "https://www.facebook.com/122100903819525771/posts/122099796507525771",
+      "attachments": {
+        "data": [
+          {
+            "media_type": "photo",
+            "description": "💻 Un petit détail peut faire toute la différence sur un site web.\n\nQuand tu crées un site, ne vérifie pas seulement s’il fonctionne sur ton ordinateur. Pense aussi à l’ouvrir sur un téléphone.\n\nVoici 3 choses à vérifier avant de le partager :\n\n- Est-ce que le texte reste facile à lire sur un petit écran ?\n- Est-ce que les boutons sont faciles à utiliser ?\n- Est-ce que les images et les liens fonctionnent correctement ?\n\nUn site peut être beau sur ordinateur et devenir difficile à utiliser sur mobile. C’est pour ça qu’il faut toujours tester les deux.\n\nDéveloppeurs et créateurs de sites : quelle vérification faites-vous toujours avant de mettre un site en ligne ?\n\n#KIDAS #DéveloppementWeb #CréationDeSites #Technologie"
           }
         ]
       },
@@ -38,32 +68,10 @@
       }
     },
     {
-      "id": "1330840526788040_122098903581525771",
-      "message": "Créer un projet, ce n’est pas seulement écrire du code et espérer que tout fonctionne du premier coup.\n\nAvec RENDRAX, mon objectif est de faciliter la conversion d’animations HTML en vidéos MP4. Mais comme dans tout projet technique, chaque étape apporte son lot de défis et d’améliorations.\n\nJe partage ici mes projets, mes découvertes et mon parcours de développeur, une étape à la fois.\n\nLa programmation, c’est aussi apprendre en construisant. 🛠️\n\n#RENDRAX #KIDAS #AboubacarSidik #Développeur #Tech",
-      "created_time": "2026-10-26T23:57:09+0000",
-      "permalink_url": "https://www.facebook.com/122098757199525771/posts/122098903581525771",
-      "likes": {
-        "data": [],
-        "summary": {
-          "total_count": 1,
-          "can_like": true,
-          "has_liked": true
-        }
-      },
-      "comments": {
-        "data": [],
-        "summary": {
-          "order": "chronological",
-          "total_count": 0,
-          "can_comment": true
-        }
-      }
-    },
-    {
       "id": "1330840526788040_122098513017525771",
       "message": "Vous créez des animations ou des applications web ?\n\n🚀 J’ai créé RENDRAX pour transformer des animations HTML en vidéos MP4, directement en ligne.\n\n🎬 Découvrez l’outil : https://rendrax.vercel.app\n\n💬 Dans votre travail, quel outil numérique vous ferait vraiment gagner du temps ?\n\nJe serais curieux de lire vos idées.\n\n— Aboubacar Sidik | KI DAS\n\n#RENDRAX #KIDAS #AboubacarSidik #DéveloppementWeb #OutilsNumériques",
       "created_time": "2026-10-26T11:55:42+0000",
-      "permalink_url": "https://www.facebook.com/122098757199525771/posts/122098513017525771",
+      "permalink_url": "https://www.facebook.com/122100903819525771/posts/122098513017525771",
       "attachments": {
         "data": [
           {
@@ -75,7 +83,7 @@
       "likes": {
         "data": [],
         "summary": {
-          "total_count": 4,
+          "total_count": 6,
           "can_like": true,
           "has_liked": true
         }
@@ -104,7 +112,7 @@
       "likes": {
         "data": [],
         "summary": {
-          "total_count": 14,
+          "total_count": 16,
           "can_like": true,
           "has_liked": true
         }
@@ -115,19 +123,30 @@
             "id": "122097372117525771_1706304411496525",
             "message": "@followers",
             "created_time": "2026-10-26T18:47:52+0000",
+            "from": {
+              "id": "29193033603641880",
+              "name": "Ki Das"
+            },
+            "comment_count": 0,
+            "page_a_repondu": false
+          },
+          {
+            "id": "122097372117525771_1662468608878133",
+            "message": "@followers @à la une",
+            "created_time": "2026-10-28T11:20:19+0000",
             "comment_count": 0,
             "page_a_repondu": false
           }
         ],
         "paging": {
           "cursors": {
-            "before": "MQZDZD",
+            "before": "MgZDZD",
             "after": "MQZDZD"
           }
         },
         "summary": {
           "order": "ranked",
-          "total_count": 1,
+          "total_count": 2,
           "can_comment": true
         }
       }
@@ -136,11 +155,11 @@
       "id": "1330840526788040_122097360135525771",
       "message": "🇳🇪 Bienvenue ici !\n\nJe suis Aboubacar Sidik, développeur et créateur numérique derrière KI DAS. Je partage mes projets, des astuces utiles et les coulisses de la création de sites web, d’applications et d’outils numériques.\n\n🌐 Mon portfolio : https://kidas-portfolio.web.app\n\n💬 Pour commencer, qu’aimeriez-vous voir ici : des tutoriels courts, des démonstrations ou des retours d’expérience ?\n\nAu plaisir d’échanger avec vous.\n\n#KIDAS #AboubacarSidik #DéveloppementWeb #Applications #Technologie #OpenSource",
       "created_time": "2026-10-25T02:11:39+0000",
-      "permalink_url": "https://www.facebook.com/122098757199525771/posts/122097360135525771",
+      "permalink_url": "https://www.facebook.com/122100903819525771/posts/122097360135525771",
       "likes": {
         "data": [],
         "summary": {
-          "total_count": 5,
+          "total_count": 6,
           "can_like": true,
           "has_liked": true
         }
@@ -202,7 +221,7 @@
       "id": "1330840526788040_122096899629525771",
       "message": "💡 Une animation HTML mérite parfois de sortir du navigateur.\n\nAvec RENDRAX, vous pouvez convertir une animation HTML en vidéo MP4, puis la partager plus facilement.\n\n🎬 Découvrez le projet : https://rendrax.vercel.app\n\n💬 Quel type d’animation aimeriez-vous exporter en vidéo : une démonstration de produit, une animation de site ou autre chose ?\n\n— Aboubacar Sidik | KI DAS\n\n#RENDRAX #KIDAS #AboubacarSidik #CréationNumérique #HTML",
       "created_time": "2026-10-24T13:04:04+0000",
-      "permalink_url": "https://www.facebook.com/122098757199525771/posts/122096899629525771",
+      "permalink_url": "https://www.facebook.com/122100903819525771/posts/122096899629525771",
       "attachments": {
         "data": [
           {
@@ -214,7 +233,7 @@
       "likes": {
         "data": [],
         "summary": {
-          "total_count": 4,
+          "total_count": 5,
           "can_like": true,
           "has_liked": true
         }
@@ -260,7 +279,7 @@
       "id": "1330840526788040_122096834607525771",
       "story": "Aboubacar Sidik a actualisé son statut.",
       "created_time": "2026-10-24T11:28:40+0000",
-      "permalink_url": "https://www.facebook.com/122098757199525771/posts/122096834607525771",
+      "permalink_url": "https://www.facebook.com/122100903819525771/posts/122096834607525771",
       "attachments": {
         "data": [
           {
