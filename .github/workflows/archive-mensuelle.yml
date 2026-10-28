@@ -9,6 +9,9 @@ jobs:
   archiver:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+        with:
+          path: src
       - name: Archiver la Page
         env:
           FB_PAGE_TOKEN: ${{ secrets.FB_PAGE_TOKEN }}
@@ -60,6 +63,7 @@ jobs:
               json.dump(posts, f, ensure_ascii=False, indent=2)
           print("Posts:", len(posts), "| Commentaires:", nc, "| Medias:", nm)
           PYEOF
+          if [ -d src/rapports ]; then mkdir -p "repo/$(date -u +%Y-%m)/rapports" && cp -r src/rapports/. "repo/$(date -u +%Y-%m)/rapports/"; fi
           cd repo
           git config user.name "github-actions"
           git config user.email "actions@github.com"

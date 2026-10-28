@@ -36,3 +36,13 @@ Tout se fait en modifiant des fichiers JSON puis en faisant un commit. Ne jamais
 - Répondre uniquement à de vrais messages, avec une réponse liée à ce que la personne a écrit.
 - Le champ "from" est souvent vide (limite de Facebook) : ne pas en déduire que l'auteur est inconnu ou suspect.
 - Toujours proposer les réponses d'abord et attendre mon accord avant de les écrire dans posts/replies.json.
+
+## Rapport de session
+À la fin de chaque session (publication, réponses, audit...), crée ou complète rapports/AAAA-MM-JJ.md puis fais un commit. Contenu :
+- Ce qui a été fait : posts publiés ou programmés (texte résumé, post_id), modifications, suppressions, réponses envoyées
+- Ce qui est en attente de mon accord
+- Chiffres clés de inbox/statistiques.json, avec la date de la mesure
+- Commentaires sans réponse restants
+- Problèmes rencontrés (erreur de workflow, accès manquant)
+- Idées pour les prochains posts
+N'y mets jamais de jeton ni de donnée privée. Ne modifie jamais le rapport d'un jour précédent.
