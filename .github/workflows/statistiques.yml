@@ -32,7 +32,7 @@ jobs:
           out = {"date": datetime.datetime.utcnow().isoformat() + "Z", "metriques": {}}
           out["page"] = get(pid, {"fields": "name,fan_count,followers_count"})
           out["page"].pop("id", None)
-          for m in ["page_post_engagements", "page_impressions_unique", "page_media_view", "page_views_total", "page_follows", "page_daily_follows_unique"]:
+          for m in ["page_post_engagements", "page_media_view", "page_views_total", "page_follows", "page_daily_follows_unique"]:
               d = get(pid + "/insights", {"metric": m, "period": "day"})
               if "erreur" in d:
                   out["metriques"][m] = d
