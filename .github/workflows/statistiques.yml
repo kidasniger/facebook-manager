@@ -1,7 +1,5 @@
 name: Statistiques de la Page
 on:
-  schedule:
-    - cron: "0 7 * * 1"
   workflow_dispatch:
 permissions:
   contents: write
