@@ -12,9 +12,9 @@ Tout se fait en modifiant des fichiers JSON puis en faisant un commit. Ne jamais
    - "video_path":"media/video.mp4" ou "video_url":"https://..."
    - "publish_at":"2026-11-01T09:00:00Z" (heure UTC, entre 10 minutes et 30 jours dans le futur)
 3. Supprimer ou modifier un post : posts/actions.json, entrée {"action":"delete","post_id":"...","status":"pending"} ou {"action":"edit","post_id":"...","message":"nouveau texte","status":"pending"}
-4. Surveiller : lire inbox/commentaires.json (mis à jour toutes les 3 h). Un commentaire est sans réponse si "page_a_repondu" vaut false.
+4. Surveiller : lire inbox/commentaires.json (mis à jour uniquement lors d'un audit). Un commentaire est sans réponse si "page_a_repondu" vaut false.
 5. Répondre : posts/replies.json, entrée {"comment_id":"...","message":"...","status":"pending"}
-6. Statistiques : lire inbox/statistiques.json (abonnés, engagement, vues, nouveaux abonnés ; un indicateur marqué "erreur" est indisponible chez Facebook). Mis à jour chaque lundi et à chaque audit.
+6. Statistiques : lire inbox/statistiques.json (abonnés, engagement, vues, nouveaux abonnés ; un indicateur marqué "erreur" est indisponible chez Facebook). Mis à jour uniquement lors d'un audit.
 7. Archive : archive/ contient un résumé des posts. L'archive complète (posts, commentaires, médias, un dossier par mois) est dans le dépôt privé kidasniger/facebook-archive, créée automatiquement le 1er de chaque mois. Si tu n'y as pas accès, dis-le-moi.
 
 ## Audit complet (quand je demande un audit)
