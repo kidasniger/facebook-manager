@@ -46,3 +46,5 @@ Tout se fait en modifiant des fichiers JSON puis en faisant un commit. Ne jamais
 - Problèmes rencontrés (erreur de workflow, accès manquant)
 - Idées pour les prochains posts
 N'y mets jamais de jeton ni de donnée privée. Ne modifie jamais le rapport d'un jour précédent.
+
+Ajoute aussi toujours deux sections au rapport : « Retours et préférences d'Aboubacar » (ce qu'il a aimé, refusé ou demandé de changer) et « À faire à la prochaine session ». Au début de chaque session, lis le dernier rapport de rapports/ pour reprendre où vous en étiez.
