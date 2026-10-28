@@ -1,5 +1,5 @@
 {
-  "date": "2026-10-28T20:41:56.374621Z",
+  "date": "2026-10-28T21:05:25.769125Z",
   "metriques": {
     "page_post_engagements": [
       {
@@ -16,9 +16,6 @@
         ]
       }
     ],
-    "page_impressions_unique": {
-      "erreur": "(#100) The value must be a valid insights metric"
-    },
     "page_media_view": [
       {
         "nom": "page_media_view",
