@@ -22,5 +22,10 @@
     "image_path": "media/1793223502279-Meta_AI_KI_DAS_React_Export_20261028_223724.png",
     "status": "published",
     "post_id": "1330840526788040_122100952233525771"
+  },
+  {
+    "message": "🎧 **MusicPro : bien plus qu’un simple lecteur musical Android !**\n\nJ’ai développé **MusicPro** pour écouter, organiser et profiter pleinement de sa musique, avec des fonctionnalités avancées.\n\n🎵 **Écoute musicale**\n- Lecture de la musique présente sur ton téléphone, même hors ligne.\n- Bibliothèque organisée et recherche par titre, artiste ou album.\n- Playlists, favoris et file de lecture personnalisée.\n- Lecture en arrière-plan avec commandes dans les notifications et widget sur l’écran d’accueil.\n- Lecture précédente/suivante, répétition, lecture aléatoire et avance ou retour de 10 secondes.\n\n🎤 **Paroles et karaoké**\n- Recherche de paroles en ligne.\n- Assistance IA pour améliorer la recherche et retrouver plus facilement les paroles.\n- Transcription d’un fichier audio en paroles horodatées et synchronisées grâce à Whisper.\n- Importation et sauvegarde des paroles associées aux morceaux.\n- Mode karaoké avec personnalisation de l’affichage des paroles.\n\n🎚️ **Personnalisation et confort**\n- Égaliseur audio avec réglage des bandes.\n- Thèmes clair, sombre et automatique.\n- Contrôle précis de la progression musicale.\n- Nettoyage des morceaux devenus inaccessibles.\n- Vérification et installation des mises à jour de l’application.\n\nMusicPro réunit ainsi l’écoute musicale, la gestion de ta bibliothèque et des outils pour retrouver ou créer des paroles synchronisées.\n\n📲 **Télécharge MusicPro :**\nhttps://github.com/kidasniger/MusicPro/releases/download/v1.0-b240/MusicPro-v1.0-b240.apk\n\n💬 Quelle fonctionnalité aimerais-tu découvrir en premier : l’égaliseur, le karaoké ou la transcription des paroles ?\n\n— Aboubacar Sidik | KI DAS\n\n#MusicPro #Android #LecteurMusical #Karaoké #IntelligenceArtificielle #KIDAS #AboubacarSidik",
+    "video_path": "media/vmv90yxr4.mp4",
+    "status": "pending"
   }
 ]
