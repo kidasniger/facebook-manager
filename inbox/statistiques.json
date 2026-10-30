@@ -1,23 +1,85 @@
 {
-  "date": "2026-10-29T22:38:24.409067Z",
+  "date": "2026-10-30T16:36:35.119024Z",
   "metriques": {
-    "page_post_engagements": {
-      "erreur": "Any of the pages_read_engagement, pages_manage_metadata,\n        pages_read_user_content, pages_manage_ads, pages_show_list or\n        pages_messaging"
-    },
-    "page_media_view": {
-      "erreur": "Any of the pages_read_engagement, pages_manage_metadata,\n        pages_read_user_content, pages_manage_ads, pages_show_list or\n        pages_messaging"
-    },
-    "page_views_total": {
-      "erreur": "Any of the pages_read_engagement, pages_manage_metadata,\n        pages_read_user_content, pages_manage_ads, pages_show_list or\n        pages_messaging"
-    },
-    "page_follows": {
-      "erreur": "Any of the pages_read_engagement, pages_manage_metadata,\n        pages_read_user_content, pages_manage_ads, pages_show_list or\n        pages_messaging"
-    },
-    "page_daily_follows_unique": {
-      "erreur": "Any of the pages_read_engagement, pages_manage_metadata,\n        pages_read_user_content, pages_manage_ads, pages_show_list or\n        pages_messaging"
-    }
+    "page_post_engagements": [
+      {
+        "nom": "page_post_engagements",
+        "valeurs": [
+          {
+            "date": "2026-10-28T07:00:00+0000",
+            "valeur": 4
+          },
+          {
+            "date": "2026-10-29T07:00:00+0000",
+            "valeur": 30
+          }
+        ]
+      }
+    ],
+    "page_media_view": [
+      {
+        "nom": "page_media_view",
+        "valeurs": [
+          {
+            "date": "2026-10-28T07:00:00+0000",
+            "valeur": 77
+          },
+          {
+            "date": "2026-10-29T07:00:00+0000",
+            "valeur": 408
+          }
+        ]
+      }
+    ],
+    "page_views_total": [
+      {
+        "nom": "page_views_total",
+        "valeurs": [
+          {
+            "date": "2026-10-28T07:00:00+0000",
+            "valeur": 46
+          },
+          {
+            "date": "2026-10-29T07:00:00+0000",
+            "valeur": 28
+          }
+        ]
+      }
+    ],
+    "page_follows": [
+      {
+        "nom": "page_follows",
+        "valeurs": [
+          {
+            "date": "2026-10-28T07:00:00+0000",
+            "valeur": 44
+          },
+          {
+            "date": "2026-10-29T07:00:00+0000",
+            "valeur": 57
+          }
+        ]
+      }
+    ],
+    "page_daily_follows_unique": [
+      {
+        "nom": "page_daily_follows_unique",
+        "valeurs": [
+          {
+            "date": "2026-10-28T07:00:00+0000",
+            "valeur": 13
+          },
+          {
+            "date": "2026-10-29T07:00:00+0000",
+            "valeur": 13
+          }
+        ]
+      }
+    ]
   },
   "page": {
-    "erreur": "Any of the pages_read_engagement, pages_manage_metadata,\n        pages_read_user_content, pages_manage_ads, pages_show_list or\n        pages_messaging"
+    "name": "Aboubacar Sidik",
+    "fan_count": 71,
+    "followers_count": 71
   }
 }
