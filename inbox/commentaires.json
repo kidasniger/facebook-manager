@@ -1,12 +1,59 @@
 {
-  "updated": "2026-10-30T16:39:19Z",
+  "updated": "2026-10-31T10:53:46Z",
   "page": {
     "id": "1330840526788040",
     "name": "Aboubacar Sidik",
-    "fan_count": 71,
-    "followers_count": 71
+    "fan_count": 72,
+    "followers_count": 72
   },
   "posts": [
+    {
+      "id": "1330840526788040_122102694267525771",
+      "message": "💻 TU PEUX CRÉER ET METTRE UN SITE WEB EN LIGNE SANS COMMENCER PAR PAYER UN HÉBERGEMENT !\n\nVoici 10 solutions à connaître :\n\n🌐 Pour créer sans coder :\n1. Google Sites\n2. Blogger\n3. WordPress.com\n\n🚀 Pour publier et héberger tes projets :\n4. GitHub Pages\n5. Cloudflare Pages\n6. Netlify\n7. Vercel\n8. Firebase Hosting\n\n🐍 Pour développer tes propres applications avec Python :\n9. Django\n10. Flask\n\nChaque outil répond à un besoin différent. Certains permettent de créer un site sans programmer, d'autres servent à le mettre en ligne, tandis que Django et Flask permettent de développer des applications personnalisées.\n\n⚠️ Les offres gratuites comportent des restrictions. Vérifie toujours les limites avant de choisir.\n\n💬 Tu es plutôt débutant sans code ou développeur qui aime programmer ? Dis-le en commentaire !\n\n— Aboubacar Sidik | KI DAS\n\n#KIDAS #DéveloppementWeb #CréationDeSites #WebDev #HTML #JavaScript #Python #Technologie",
+      "created_time": "2026-10-30T20:40:47+0000",
+      "permalink_url": "https://www.facebook.com/reel/2421470221956263/",
+      "attachments": {
+        "data": [
+          {
+            "media_type": "video"
+          }
+        ]
+      },
+      "likes": {
+        "data": [],
+        "summary": {
+          "total_count": 2,
+          "can_like": true,
+          "has_liked": true
+        }
+      },
+      "comments": {
+        "data": [
+          {
+            "id": "122102694267525771_2089900374976624",
+            "message": "@followers",
+            "created_time": "2026-10-30T20:46:00+0000",
+            "from": {
+              "id": "1330840526788040",
+              "name": "Aboubacar Sidik"
+            },
+            "comment_count": 0,
+            "page_a_repondu": false
+          }
+        ],
+        "paging": {
+          "cursors": {
+            "before": "MQZDZD",
+            "after": "MQZDZD"
+          }
+        },
+        "summary": {
+          "order": "ranked",
+          "total_count": 1,
+          "can_comment": true
+        }
+      }
+    },
     {
       "id": "1330840526788040_122101896747525771",
       "message": "💡 Une astuce pour mieux contrôler le travail de ton assistant IA : impose des étapes claires dès le départ.\n\nTu peux commencer avec ces consignes :\n\n« Propose seulement le texte. Attends mon “VALIDÉ”. »\n\n« Fais l’étape suivante uniquement après mon accord. »\n\n« Si une information manque, ne l’invente pas. Pose-moi une question précise. »\n\nDans ma nouvelle vidéo RENDRAX, je montre comment structurer ces consignes pour mieux guider le travail de l’IA et éviter qu’elle anticipe la suite sans ton accord.\n\nEssaie cette méthode sur ta prochaine tâche.\n\n💬 Quelle tâche aimerais-tu mieux contrôler avec l’IA ?\n\n— Aboubacar Sidik | KI DAS\n\n#RENDRAX #AstucesIA #PromptIA #Productivité #KIDAS #AboubacarSidik",
