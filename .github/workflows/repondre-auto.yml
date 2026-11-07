@@ -1,0 +1,48 @@
+name: Répondre automatiquement (GLM)
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Test sans rien publier (true ou false)'
+        required: false
+        default: 'true'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: facebook-comment-processing
+  cancel-in-progress: false
+
+jobs:
+  repondre:
+    # Pour mettre en pause : variable Actions AUTO_REPONSES = off
+    if: vars.AUTO_REPONSES != 'off'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Récupérer les données (dépôt privé)
+        uses: actions/checkout@v4
+        with:
+          repository: kidasniger/facebook-data
+          token: ${{ secrets.DATA_PAT }}
+          path: data
+
+      - name: Répondre aux commentaires
+        env:
+          FB_PAGE_TOKEN: ${{ secrets.FB_PAGE_TOKEN }}
+          FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
+          ZAI_API_KEY: ${{ secrets.ZAI_API_KEY }}
+          ZAI_BASE_URL: ${{ secrets.ZAI_BASE_URL }}
+          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+          DATA_DIR: ${{ github.workspace }}/data
+        run: python3 scripts/repondre_auto.py
+
+      - name: Enregistrer dans le dépôt privé
+        if: always()
+        uses: ./.github/actions/save-data
+        with:
+          paths: inbox/commentaires-traites.json
+          message: "Réponses automatiques"

@@ -1,0 +1,27 @@
+name: Tests traitement commentaires
+on:
+  pull_request:
+    paths:
+      - "scripts/**"
+      - "tests/**"
+      - ".github/workflows/test-comment-processing.yml"
+  push:
+    branches: [main]
+    paths:
+      - "scripts/**"
+      - "tests/**"
+      - ".github/workflows/test-comment-processing.yml"
+permissions:
+  contents: read
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Vérifier la syntaxe Python
+        run: python -m compileall -q scripts tests
+      - name: Tester l'historique partagé et la pagination
+        run: python -m unittest discover -s tests -v

@@ -1,0 +1,40 @@
+name: Audit complet
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: write
+concurrency:
+  group: audit
+  cancel-in-progress: false
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Récupérer les données (dépôt privé)
+        uses: actions/checkout@v4
+        with:
+          repository: kidasniger/facebook-data
+          token: ${{ secrets.DATA_PAT }}
+          path: data
+      - name: Lancer les lectures
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for w in surveiller statistiques archiver archive-mensuelle; do
+            gh workflow run "$w.yml" && echo "lance: $w"
+            sleep 6
+            id=$(gh run list --workflow="$w.yml" --limit 1 --json databaseId -q '.[0].databaseId')
+            gh run watch "$id" --exit-status >/dev/null && echo "termine: $w" || echo "echec: $w"
+          done
+      - name: Signaler la fin
+        working-directory: data
+        run: |
+          mkdir -p audit
+          printf '{"termine":"%s","workflows":["surveiller","statistiques","archiver","archive-mensuelle"]}\n' "$(date -u +%FT%TZ)" > audit/resultat.json
+      - name: Enregistrer dans le dépôt privé
+        uses: ./.github/actions/save-data
+        with:
+          paths: audit/resultat.json
+          message: "Audit terminé"

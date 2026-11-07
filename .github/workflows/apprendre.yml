@@ -1,0 +1,39 @@
+name: Apprendre (kidas.md et performances)
+
+# Lit les kidas.md des dépôts publics + le README du compte, analyse les posts,
+# puis écrit (dans le dépôt privé) connaissances/projets.md et connaissances/performance.md.
+# Une fois par jour : très court, pour économiser le quota GitHub Actions.
+on:
+  schedule:
+    - cron: "17 5 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: apprendre
+  cancel-in-progress: false
+
+jobs:
+  apprendre:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Récupérer les données (dépôt privé)
+        uses: actions/checkout@v4
+        with:
+          repository: kidasniger/facebook-data
+          token: ${{ secrets.DATA_PAT }}
+          path: data
+      - name: Générer les connaissances
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          DATA_DIR: ${{ github.workspace }}/data
+        run: python3 scripts/apprendre.py
+      - name: Enregistrer dans le dépôt privé
+        uses: ./.github/actions/save-data
+        with:
+          paths: connaissances
+          message: "Connaissances : mise à jour automatique"

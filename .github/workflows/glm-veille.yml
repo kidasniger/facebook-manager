@@ -1,0 +1,32 @@
+name: GLM Veille (surveillance et redémarrage)
+
+# Vérifie toutes les 10 minutes que GLM Live fonctionne.
+# Actif par défaut ; définir GLM_LIVE=off pour désactiver.
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+permissions:
+  actions: write
+  contents: read
+
+jobs:
+  relance:
+    if: vars.GLM_LIVE != 'off'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Vérifier et relancer si aucune session active
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          n=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow glm-live.yml --branch main --limit 30 --json status --jq '[.[] | select(.status=="in_progress" or .status=="queued" or .status=="waiting" or .status=="pending" or .status=="requested")] | length')
+          echo "Sessions GLM Live actives ou en attente : $n"
+          if [ "$n" -eq 0 ]; then
+            echo "Aucune session active : démarrage d'une nouvelle session."
+            gh workflow run glm-live.yml --repo "$GITHUB_REPOSITORY" --ref main -f dry_run=false -f minutes=330
+          else
+            echo "Une session GLM Live est déjà active."
+          fi

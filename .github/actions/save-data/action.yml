@@ -1,0 +1,29 @@
+name: Enregistrer dans le dépôt de données (privé)
+description: Commit puis push des fichiers modifiés dans data/ avec reprise en cas de conflit.
+inputs:
+  paths:
+    description: Fichiers ou dossiers à ajouter, séparés par des espaces (relatifs à data/)
+    required: true
+  message:
+    description: Message de commit
+    required: true
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      working-directory: data
+      env:
+        PATHS: ${{ inputs.paths }}
+        MSG: ${{ inputs.message }}
+      run: |
+        git config user.name "github-actions"
+        git config user.email "actions@users.noreply.github.com"
+        read -ra LISTE <<< "$PATHS"
+        git add -- "${LISTE[@]}" 2>/dev/null || true
+        if git diff --cached --quiet; then echo "Rien à enregistrer."; exit 0; fi
+        git commit -q -m "$MSG"
+        for i in 1 2 3 4; do
+          if git pull -q --rebase --autostash && git push -q; then echo "Enregistré dans le dépôt privé."; exit 0; fi
+          sleep $((i * 4))
+        done
+        echo "Échec du push vers le dépôt de données."; exit 1

@@ -1,0 +1,26 @@
+name: Garder les workflows planifiés actifs
+
+# GitHub désactive les workflows planifiés d'un dépôt public sans activité depuis 60 jours.
+# Les données étant maintenant dans un autre dépôt, ce workflow réactive les workflows
+# planifiés deux fois par mois (appel d'activation, sans effet s'ils sont déjà actifs).
+on:
+  schedule:
+    - cron: "23 4 1,15 * *"
+  workflow_dispatch:
+
+permissions:
+  actions: write
+  contents: read
+
+jobs:
+  keepalive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Réactiver les workflows planifiés
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for w in glm-veille.yml dispatcher.yml apprendre.yml archive-mensuelle.yml keepalive.yml; do
+            gh api -X PUT "repos/$GITHUB_REPOSITORY/actions/workflows/$w/enable" >/dev/null 2>&1 && echo "ok : $w" || echo "ignoré : $w"
+          done

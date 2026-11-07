@@ -1,0 +1,65 @@
+name: GLM Live (réponses automatiques)
+
+# Actif par défaut ; définir GLM_LIVE=off pour désactiver.
+# Une session dure 330 minutes puis déclenche la suivante.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/glm_manager.py"
+      - "scripts/glm_boucle.py"
+      - "scripts/comment_store.py"
+      - ".github/workflows/glm-live.yml"
+      - ".github/workflows/glm-veille.yml"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Test sans publication (true ou false)"
+        required: false
+        default: "false"
+      minutes:
+        description: "Durée de session en minutes (330 en production)"
+        required: false
+        default: "330"
+
+permissions:
+  contents: read
+  actions: write
+
+concurrency:
+  group: facebook-comment-processing
+  cancel-in-progress: true
+
+jobs:
+  veille:
+    if: vars.GLM_LIVE != 'off'
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    env:
+      DRY_RUN: ${{ github.event.inputs.dry_run == 'true' && '1' || '0' }}
+      DUREE_MINUTES: ${{ github.event.inputs.minutes || '330' }}
+      INTERVALLE_SECONDS: "60"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Récupérer les données (dépôt privé)
+        uses: actions/checkout@v4
+        with:
+          repository: kidasniger/facebook-data
+          token: ${{ secrets.DATA_PAT }}
+          path: data
+      - name: Vérifier Python
+        run: python3 --version
+      - name: Veiller sur les commentaires
+        id: boucle
+        env:
+          FB_PAGE_TOKEN: ${{ secrets.FB_PAGE_TOKEN }}
+          FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
+          ZAI_API_KEY: ${{ secrets.ZAI_API_KEY }}
+          DATA_DIR: ${{ github.workspace }}/data
+        run: python3 scripts/glm_boucle.py
+      - name: Relancer automatiquement la session suivante
+        if: steps.boucle.outcome == 'success' && steps.boucle.outputs.relance != 'non' && env.DRY_RUN != '1' && vars.GLM_LIVE != 'off'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run glm-live.yml --ref main -f dry_run=false -f minutes=330

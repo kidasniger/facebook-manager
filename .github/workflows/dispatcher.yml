@@ -1,0 +1,53 @@
+name: Dispatcher (déclenche les publications du dépôt privé)
+
+# Un push dans le dépôt privé ne peut pas lancer un workflow de ce dépôt public.
+# Ce workflow regarde donc toutes les 5 minutes s'il y a des entrées "pending" dans
+# le dépôt de données et lance le workflow correspondant. Gratuit (dépôt public).
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+permissions:
+  actions: write
+  contents: read
+
+concurrency:
+  group: dispatcher
+  cancel-in-progress: false
+
+jobs:
+  dispatcher:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Récupérer les données (dépôt privé)
+        uses: actions/checkout@v4
+        with:
+          repository: kidasniger/facebook-data
+          token: ${{ secrets.DATA_PAT }}
+          path: data
+      - name: Lancer ce qui est en attente
+        working-directory: data
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -uo pipefail
+          en_attente() { [ -f "$1" ] && jq -e 'any(.[]?; .status == "pending")' "$1" >/dev/null 2>&1; }
+          lancer() {
+            actifs=$(gh run list --workflow "$1" --limit 10 --json status --jq '[.[] | select(.status != "completed")] | length')
+            if [ "${actifs:-0}" -gt 0 ]; then echo "$1 : déjà en cours."; else gh workflow run "$1" && echo "Lancé : $1"; fi
+          }
+          en_attente posts/queue.json   && lancer publier.yml
+          en_attente posts/avance.json  && lancer publier-avance.yml
+          en_attente posts/replies.json && lancer repondre.yml
+          en_attente posts/actions.json && lancer actions-posts.yml
+          # Audit : une demande plus récente que le dernier résultat
+          if [ -f audit/demande.json ]; then
+            statut=$(jq -r '.status // empty' audit/demande.json)
+            date_d=$(jq -r '.date // empty' audit/demande.json)
+            date_r=$(jq -r '.termine // empty' audit/resultat.json 2>/dev/null || true)
+            if [ "$statut" = "demande" ] && [ -n "$date_d" ] && [[ "$date_d" > "$date_r" ]]; then lancer audit.yml; fi
+          fi
+          echo "Contrôle terminé."

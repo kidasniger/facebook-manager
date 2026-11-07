@@ -1,0 +1,51 @@
+name: Redémarrer GLM Live proprement
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/restart-glm-live.yml"
+  workflow_dispatch:
+
+permissions:
+  actions: write
+  contents: read
+
+jobs:
+  restart:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Arrêter les anciennes sessions GLM Live
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          repo="$GITHUB_REPOSITORY"
+          workflow_id="408648875"
+
+          active_runs="$(gh api "repos/$repo/actions/runs?per_page=100" --jq ".workflow_runs[] | select(.workflow_id == $workflow_id and (.status == \"in_progress\" or .status == \"queued\" or .status == \"pending\")) | .id")"
+
+          if [ -n "$active_runs" ]; then
+            while IFS= read -r run_id; do
+              [ -z "$run_id" ] && continue
+              echo "Annulation de l'exécution GLM Live $run_id"
+              gh run cancel "$run_id" --repo "$repo" || true
+            done <<< "$active_runs"
+          fi
+
+          for attempt in $(seq 1 20); do
+            remaining="$(gh api "repos/$repo/actions/runs?per_page=100" --jq ".workflow_runs[] | select(.workflow_id == $workflow_id and (.status == \"in_progress\" or .status == \"queued\" or .status == \"pending\")) | .id")"
+            [ -z "$remaining" ] && break
+            sleep 3
+          done
+
+          if [ -n "$remaining" ]; then
+            echo "Une ancienne session GLM Live est toujours active : $remaining"
+            exit 1
+          fi
+
+      - name: Lancer GLM Live avec le code de main
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run glm-live.yml --repo "$GITHUB_REPOSITORY" -f dry_run=false -f minutes=330
