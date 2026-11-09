@@ -5,6 +5,9 @@ permissions:
   contents: read
 jobs:
   agir:
+    # Inactif par défaut : GLM Live exécute cette file d'attente (évite les doublons).
+    # Retour à l'ancien fonctionnement : variable Actions FILE_ATTENTE = workflows.
+    if: vars.FILE_ATTENTE == 'workflows'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -28,9 +31,9 @@ jobs:
               pid=$(jq -r ".[$i].post_id" $f)
               msg=$(jq -r ".[$i].message // empty" $f)
               if [ "$act" = "delete" ]; then
-                res=$(curl -s -X DELETE "https://graph.facebook.com/v21.0/$pid" --data-urlencode "access_token=$FB_PAGE_TOKEN")
+                res=$(curl -s -X DELETE "https://graph.facebook.com/v26.0/$pid" --data-urlencode "access_token=$FB_PAGE_TOKEN")
               elif [ "$act" = "edit" ]; then
-                res=$(curl -s -X POST "https://graph.facebook.com/v21.0/$pid" --data-urlencode "message=$msg" --data-urlencode "access_token=$FB_PAGE_TOKEN")
+                res=$(curl -s -X POST "https://graph.facebook.com/v26.0/$pid" --data-urlencode "message=$msg" --data-urlencode "access_token=$FB_PAGE_TOKEN")
               else
                 res='{}'
               fi

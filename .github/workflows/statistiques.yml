@@ -24,7 +24,7 @@ jobs:
           import os, json, urllib.request, urllib.parse, urllib.error, datetime
           tok = os.environ["FB_PAGE_TOKEN"]
           pid = os.environ["FB_PAGE_ID"]
-          G = "https://graph.facebook.com/v21.0/"
+          G = "https://graph.facebook.com/v26.0/"
           def get(path, params):
               params["access_token"] = tok
               try:

@@ -18,7 +18,7 @@ from datetime import datetime, timedelta, timezone
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import comment_store
 
-GRAPH = "https://graph.facebook.com/v21.0"
+GRAPH = "https://graph.facebook.com/v26.0"
 ZAI_URL = (os.environ.get("ZAI_BASE_URL") or "https://api.z.ai/api/paas/v4").rstrip("/")
 MODEL = os.environ.get("ZAI_MODEL") or "glm-4.5-flash"
 PAGE_ID = os.environ["FB_PAGE_ID"]

@@ -2,6 +2,7 @@ name: GLM Live (réponses automatiques)
 
 # Actif par défaut ; définir GLM_LIVE=off pour désactiver.
 # Une session dure 330 minutes puis déclenche la suivante.
+# Chef d'orchestre unique : lecture des commentaires, réponses, files d'attente de l'app, statistiques.
 
 on:
   push:
@@ -10,6 +11,9 @@ on:
       - "scripts/glm_manager.py"
       - "scripts/glm_boucle.py"
       - "scripts/comment_store.py"
+      - "scripts/lecture_cache.py"
+      - "scripts/file_attente.py"
+      - "scripts/taches_periodiques.py"
       - ".github/workflows/glm-live.yml"
       - ".github/workflows/glm-veille.yml"
   workflow_dispatch:
@@ -40,6 +44,12 @@ jobs:
       DRY_RUN: ${{ github.event.inputs.dry_run == 'true' && '1' || '0' }}
       DUREE_MINUTES: ${{ github.event.inputs.minutes || '330' }}
       INTERVALLE_SECONDS: "60"
+      # Balayage complet (filet de sécurité) et statistiques espacées : voir scripts/glm_boucle.py
+      BALAYAGE_MINUTES: ${{ vars.BALAYAGE_MINUTES || '20' }}
+      STATS_HEURES: ${{ vars.STATS_HEURES || '6' }}
+      # glm (défaut) : cette boucle exécute les files d'attente de l'app.
+      # workflows : retour à l'ancien fonctionnement (dispatcher + publier*.yml).
+      FILE_ATTENTE: ${{ vars.FILE_ATTENTE || 'glm' }}
     steps:
       - uses: actions/checkout@v4
       - name: Récupérer les données (dépôt privé)
@@ -57,6 +67,7 @@ jobs:
           FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
           ZAI_API_KEY: ${{ secrets.ZAI_API_KEY }}
           DATA_DIR: ${{ github.workspace }}/data
+          FB_GRAPH_VERSION: ${{ vars.FB_GRAPH_VERSION }}
         run: python3 scripts/glm_boucle.py
       - name: Relancer automatiquement la session suivante
         if: steps.boucle.outcome == 'success' && steps.boucle.outputs.relance != 'non' && env.DRY_RUN != '1' && vars.GLM_LIVE != 'off'

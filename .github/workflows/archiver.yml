@@ -25,7 +25,7 @@ jobs:
           tok = os.environ["FB_PAGE_TOKEN"]
           pid = os.environ["FB_PAGE_ID"]
           fields = "id,message,created_time,permalink_url,status_type,shares,likes.summary(true).limit(0),comments.summary(true).limit(0)"
-          url = "https://graph.facebook.com/v21.0/%s/posts?" % pid + urllib.parse.urlencode({"fields": fields, "limit": 50, "access_token": tok})
+          url = "https://graph.facebook.com/v26.0/%s/posts?" % pid + urllib.parse.urlencode({"fields": fields, "limit": 50, "access_token": tok})
           posts = []
           while url:
               try:

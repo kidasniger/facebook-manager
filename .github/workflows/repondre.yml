@@ -5,6 +5,9 @@ permissions:
   contents: read
 jobs:
   repondre:
+    # Inactif par défaut : GLM Live exécute cette file d'attente (évite les doublons).
+    # Retour à l'ancien fonctionnement : variable Actions FILE_ATTENTE = workflows.
+    if: vars.FILE_ATTENTE == 'workflows'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -26,7 +29,7 @@ jobs:
             if [ "$st" = "pending" ]; then
               cid=$(jq -r ".[$i].comment_id" $f)
               msg=$(jq -r ".[$i].message" $f)
-              res=$(curl -s -X POST "https://graph.facebook.com/v21.0/$cid/comments" --data-urlencode "message=$msg" --data-urlencode "access_token=$FB_PAGE_TOKEN")
+              res=$(curl -s -X POST "https://graph.facebook.com/v26.0/$cid/comments" --data-urlencode "message=$msg" --data-urlencode "access_token=$FB_PAGE_TOKEN")
               rid=$(echo "$res" | jq -r '.id // empty')
               if [ -n "$rid" ]; then
                 jq ".[$i].status=\"replied\" | .[$i].reply_id=\"$rid\"" $f > /tmp/r.json && mv /tmp/r.json $f

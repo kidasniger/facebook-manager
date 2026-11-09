@@ -5,6 +5,9 @@ permissions:
   contents: read
 jobs:
   publier:
+    # Inactif par défaut : GLM Live exécute cette file d'attente (évite les doublons).
+    # Retour à l'ancien fonctionnement : variable Actions FILE_ATTENTE = workflows.
+    if: vars.FILE_ATTENTE == 'workflows'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

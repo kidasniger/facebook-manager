@@ -25,7 +25,7 @@ NOW = dt.datetime.now(dt.timezone.utc)
 DRY = os.environ.get("DRY_RUN") == "1"
 PAGE_ID = os.environ.get("FB_PAGE_ID", "")
 TOKEN = os.environ.get("FB_PAGE_TOKEN", "")
-GRAPH = "https://graph.facebook.com/v21.0"
+GRAPH = "https://graph.facebook.com/" + (os.environ.get("FB_GRAPH_VERSION") or "v26.0")
 SIGNATURE = "— Aboubacar Sidik | KI DAS"
 LINKS_OK = ("https://rendrax.vercel.app", "https://kidas-portfolio.web.app")
 
@@ -112,15 +112,57 @@ def jsave(path, data):
         f.write("\n")
 
 
-def http(url, data=None, headers=None, timeout=90):
+APPELS = {"graph": 0}   # nombre d'appels Graph depuis le début (sert aux journaux)
+USAGE = {"pct": 0, "attente_min": 0}   # dernier niveau de quota annoncé par Facebook (en %)
+
+
+def _lire_usage(headers):
+    """Facebook indique dans chaque réponse quel pourcentage du quota est consommé
+    (X-Business-Use-Case-Usage pour une Page, X-App-Usage pour l'application)."""
+    if headers is None:
+        return
+    pct, attente = 0, 0
+    for nom in ("x-business-use-case-usage", "x-app-usage"):
+        brut = headers.get(nom)
+        if not brut:
+            continue
+        try:
+            data = json.loads(brut)
+        except Exception:
+            continue
+        blocs = []
+        if isinstance(data, dict) and "call_count" in data:
+            blocs.append(data)
+        elif isinstance(data, dict):
+            for liste in data.values():
+                if isinstance(liste, list):
+                    blocs.extend(b for b in liste if isinstance(b, dict))
+        for b in blocs:
+            for cle in ("call_count", "total_cputime", "total_time"):
+                try:
+                    pct = max(pct, int(b.get(cle) or 0))
+                except (TypeError, ValueError):
+                    pass
+            try:
+                attente = max(attente, int(b.get("estimated_time_to_regain_access") or 0))
+            except (TypeError, ValueError):
+                pass
+    USAGE["pct"], USAGE["attente_min"] = pct, attente
+
+
+def http(url, data=None, headers=None, timeout=90, method=None):
     body = None
     if data is not None:
         body = data if isinstance(data, bytes) else urllib.parse.urlencode(data).encode()
-    req = urllib.request.Request(url, data=body, headers=headers or {})
+    req = urllib.request.Request(url, data=body, headers=headers or {}, method=method)
+    if url.startswith("https://graph.facebook.com/"):
+        APPELS["graph"] += 1
     try:
         with urllib.request.urlopen(req, timeout=timeout) as r:
+            _lire_usage(r.headers)
             return r.status, json.loads(r.read().decode("utf-8") or "{}")
     except urllib.error.HTTPError as e:
+        _lire_usage(e.headers)
         raw = e.read().decode("utf-8", "replace")
         try:
             return e.code, json.loads(raw)
@@ -169,6 +211,9 @@ def fb_posts():
     try:
         posts = comment_store.fetch_page_posts(PAGE_ID, TOKEN, GRAPH, lambda url: http(url))
         return 200, {"data": posts}
+    except comment_store.FacebookError as exc:
+        log(str(exc))
+        return exc.status or 0, {"error": {"message": str(exc), "code": exc.code, "error_subcode": exc.subcode}}
     except RuntimeError as exc:
         log(str(exc))
         return 0, {"error": {"message": str(exc)}}

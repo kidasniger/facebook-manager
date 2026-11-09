@@ -5,6 +5,9 @@ permissions:
   contents: read
 jobs:
   publier:
+    # Inactif par défaut : GLM Live exécute cette file d'attente (évite les doublons).
+    # Retour à l'ancien fonctionnement : variable Actions FILE_ATTENTE = workflows.
+    if: vars.FILE_ATTENTE == 'workflows'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -36,7 +39,7 @@ jobs:
               ts=$(date -d "$when" +%s)
               sched=(-F "published=false" -F "scheduled_publish_time=$ts")
             fi
-            base="https://graph.facebook.com/v21.0/$FB_PAGE_ID"
+            base="https://graph.facebook.com/v26.0/$FB_PAGE_ID"
             if [ -n "$img" ]; then
               res=$(curl -s -X POST "$base/photos" -F "source=@$img" --form-string "caption=$msg" "${sched[@]}" --form-string "access_token=$FB_PAGE_TOKEN")
             elif [ -n "$imgurl" ]; then

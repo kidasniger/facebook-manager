@@ -26,6 +26,18 @@ def apercu(texte, limite=60):
 LEDGER_PATH = data_path("inbox", "commentaires-traites.json")
 
 
+class FacebookError(RuntimeError):
+    """Erreur de lecture Facebook avec son code, pour que l'appelant puisse réagir
+    (jeton expiré, limite d'appels...). Le message ne contient jamais le jeton."""
+
+    def __init__(self, message, status=None, code=None, subcode=None, kind=None):
+        super().__init__(message)
+        self.status = status
+        self.code = code
+        self.subcode = subcode
+        self.kind = kind
+
+
 def load_ledger(path=LEDGER_PATH, legacy_paths=()):
     entries = []
     seen = set()
@@ -89,8 +101,9 @@ def is_handled(entries, comment_id, source=None):
     return False
 
 
-def fetch_all(first_url, get_json):
-    """Suit tous les liens paging.next. Ne jamais journaliser les URL (elles contiennent le jeton)."""
+def fetch_all(first_url, get_json, max_pages=None):
+    """Suit tous les liens paging.next (au plus max_pages pages si indiqué).
+    Ne jamais journaliser les URL (elles contiennent le jeton)."""
     result = []
     url = first_url
     visited = set()
@@ -107,13 +120,63 @@ def fetch_all(first_url, get_json):
             kind = error.get("type")
             subcode = error.get("error_subcode")
             # Ne jamais inclure l'URL : elle contient le jeton d'accès.
-            raise RuntimeError(
+            raise FacebookError(
                 f"Lecture Facebook impossible à la page {len(visited)} "
-                f"(HTTP {code}, code {error.get('code')}, sous-code {subcode}, type {kind}) : {str(detail)[:300]}"
+                f"(HTTP {code}, code {error.get('code')}, sous-code {subcode}, type {kind}) : {str(detail)[:300]}",
+                status=code, code=error.get("code"), subcode=subcode, kind=kind,
             )
         result.extend(payload.get("data") or [])
         url = (payload.get("paging") or {}).get("next")
+        if max_pages and len(visited) >= max_pages:
+            break
     return result
+
+
+def fetch_post_comments(post, page_id, token, graph, get_json):
+    """Charge tous les niveaux de commentaires/réponses d'UNE publication et les met à plat
+    dans post["comments"]. Même comportement qu'avant, isolé pour pouvoir relire un seul post."""
+    comment_query = urllib.parse.urlencode({
+        "fields": "id,message,created_time,from{id,name},comment_count",
+        "limit": 100,
+        "access_token": token,
+    })
+    roots = fetch_all(f"{graph}/{post['id']}/comments?{comment_query}", get_json)
+    flattened = []
+    queue = [(item, None, None) for item in roots]
+    visited = set()
+
+    while queue:
+        comment, parent_id, root_id = queue.pop(0)
+        cid = str(comment.get("id") or "")
+        if not cid or cid in visited:
+            continue
+        visited.add(cid)
+        comment["parent_id"] = parent_id
+        # Facebook n'a que deux niveaux (commentaire > réponse). Les réponses doivent
+        # toujours être publiées sur le commentaire racine, sinon Facebook Lite les masque.
+        root_id = root_id or cid
+        comment["root_id"] = root_id
+        comment["post_id"] = post["id"]
+        comment["page_replied"] = False
+        flattened.append(comment)
+
+        # Ne pas se fier à comment_count : selon les réponses de l'API Graph,
+        # ce compteur peut être absent ou incohérent alors que des réponses existent.
+        # Interroger chaque edge /comments permet de découvrir toute la profondeur.
+        child_query = urllib.parse.urlencode({
+            "fields": "id,message,created_time,from{id,name},comment_count",
+            "limit": 100,
+            "access_token": token,
+        })
+        children = fetch_all(f"{graph}/{cid}/comments?{child_query}", get_json)
+        comment["page_replied"] = any(
+            str((child.get("from") or {}).get("id") or "") == str(page_id)
+            for child in children
+        )
+        queue.extend((child, cid, root_id) for child in children)
+
+    post["comments"] = {"data": flattened, "summary": {"total_count": len(flattened)}}
+    return post
 
 
 def fetch_page_posts(page_id, token, graph, get_json):
@@ -124,49 +187,8 @@ def fetch_page_posts(page_id, token, graph, get_json):
         "access_token": token,
     })
     posts = fetch_all(f"{graph}/{page_id}/posts?{posts_query}", get_json)
-
     for post in posts:
-        comment_query = urllib.parse.urlencode({
-            "fields": "id,message,created_time,from{id,name},comment_count",
-            "limit": 100,
-            "access_token": token,
-        })
-        roots = fetch_all(f"{graph}/{post['id']}/comments?{comment_query}", get_json)
-        flattened = []
-        queue = [(item, None, None) for item in roots]
-        visited = set()
-
-        while queue:
-            comment, parent_id, root_id = queue.pop(0)
-            cid = str(comment.get("id") or "")
-            if not cid or cid in visited:
-                continue
-            visited.add(cid)
-            comment["parent_id"] = parent_id
-            # Facebook n'a que deux niveaux (commentaire > réponse). Les réponses doivent
-            # toujours être publiées sur le commentaire racine, sinon Facebook Lite les masque.
-            root_id = root_id or cid
-            comment["root_id"] = root_id
-            comment["post_id"] = post["id"]
-            comment["page_replied"] = False
-            flattened.append(comment)
-
-            # Ne pas se fier à comment_count : selon les réponses de l'API Graph,
-            # ce compteur peut être absent ou incohérent alors que des réponses existent.
-            # Interroger chaque edge /comments permet de découvrir toute la profondeur.
-            child_query = urllib.parse.urlencode({
-                "fields": "id,message,created_time,from{id,name},comment_count",
-                "limit": 100,
-                "access_token": token,
-            })
-            children = fetch_all(f"{graph}/{cid}/comments?{child_query}", get_json)
-            comment["page_replied"] = any(
-                str((child.get("from") or {}).get("id") or "") == str(page_id)
-                for child in children
-            )
-            queue.extend((child, cid, root_id) for child in children)
-
-        post["comments"] = {"data": flattened, "summary": {"total_count": len(flattened)}}
+        fetch_post_comments(post, page_id, token, graph, get_json)
     return posts
 
 

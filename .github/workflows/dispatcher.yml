@@ -32,6 +32,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
+          FILE_ATTENTE: ${{ vars.FILE_ATTENTE || 'glm' }}
         run: |
           set -uo pipefail
           en_attente() { [ -f "$1" ] && jq -e 'any(.[]?; .status == "pending")' "$1" >/dev/null 2>&1; }
@@ -39,10 +40,16 @@ jobs:
             actifs=$(gh run list --workflow "$1" --limit 10 --json status --jq '[.[] | select(.status != "completed")] | length')
             if [ "${actifs:-0}" -gt 0 ]; then echo "$1 : déjà en cours."; else gh workflow run "$1" && echo "Lancé : $1"; fi
           }
-          en_attente posts/queue.json   && lancer publier.yml
-          en_attente posts/avance.json  && lancer publier-avance.yml
-          en_attente posts/replies.json && lancer repondre.yml
-          en_attente posts/actions.json && lancer actions-posts.yml
+          # Par défaut, GLM Live (glm-live.yml) exécute les files d'attente lui-même, en moins d'une minute.
+          # Pour revenir à l'ancien fonctionnement : variable Actions FILE_ATTENTE = workflows.
+          if [ "$FILE_ATTENTE" = "workflows" ]; then
+            en_attente posts/queue.json   && lancer publier.yml
+            en_attente posts/avance.json  && lancer publier-avance.yml
+            en_attente posts/replies.json && lancer repondre.yml
+            en_attente posts/actions.json && lancer actions-posts.yml
+          else
+            echo "Files d'attente gérées par GLM Live (FILE_ATTENTE=$FILE_ATTENTE)."
+          fi
           # Audit : une demande plus récente que le dernier résultat
           if [ -f audit/demande.json ]; then
             statut=$(jq -r '.status // empty' audit/demande.json)
