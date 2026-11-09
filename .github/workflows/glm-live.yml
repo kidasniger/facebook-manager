@@ -12,6 +12,7 @@ on:
       - "scripts/glm_boucle.py"
       - "scripts/comment_store.py"
       - "scripts/lecture_cache.py"
+      - "scripts/lecture_messages.py"
       - "scripts/file_attente.py"
       - "scripts/taches_periodiques.py"
       - ".github/workflows/glm-live.yml"
@@ -47,6 +48,8 @@ jobs:
       # Balayage complet (filet de sécurité) et statistiques espacées : voir scripts/glm_boucle.py
       BALAYAGE_MINUTES: ${{ vars.BALAYAGE_MINUTES || '20' }}
       STATS_HEURES: ${{ vars.STATS_HEURES || '6' }}
+      # Messenger : intervalle (secondes) entre deux listes de conversations.
+      MESSAGES_SECONDES: ${{ vars.MESSAGES_SECONDES || '120' }}
       # glm (défaut) : cette boucle exécute les files d'attente de l'app.
       # workflows : retour à l'ancien fonctionnement (dispatcher + publier*.yml).
       FILE_ATTENTE: ${{ vars.FILE_ATTENTE || 'glm' }}

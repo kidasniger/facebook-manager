@@ -17,6 +17,7 @@ import time
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import glm_manager as gm
 import lecture_cache
+import lecture_messages
 import file_attente
 import taches_periodiques
 DUREE = int(os.environ.get("DUREE_MINUTES") or 330) * 60
@@ -25,6 +26,9 @@ BALAYAGE_MINUTES = int(os.environ.get("BALAYAGE_MINUTES") or 20)
 STATS_HEURES = float(os.environ.get("STATS_HEURES") or 6)
 PUSH_CACHE_SECONDES = 300
 PAGE_INFO_SECONDES = 600
+# Messenger : un appel de liste toutes les MESSAGES_SECONDES (doublé si quota >= 50 %, suspendu >= 75 %).
+MESSAGES_SECONDES = max(30, int(os.environ.get("MESSAGES_SECONDES") or 120))
+PUSH_MESSAGES_SECONDES = 120
 FILE_ATTENTE_ACTIVE = (os.environ.get("FILE_ATTENTE") or "glm") != "workflows"
 DRY = gm.DRY
 DEBUT = time.time()
@@ -34,7 +38,9 @@ CODES_LIMITE = {4, 17, 32, 613} | set(range(80000, 80015))
 CODES_BLOCAGE = {368}  # Facebook a temporairement bloqué une action (politique anti-spam)
 
 CHEMINS_PAR_DEFAUT = ("glm/etat.json", "inbox/a_traiter.json", "inbox/commentaires-traites.json",
-                      "posts/replies.json", "inbox/commentaires.json", "inbox/statistiques.json")
+                      "posts/replies.json", "inbox/commentaires.json", "inbox/statistiques.json",
+                      "inbox/messages.json", "posts/messages.json")
+CODES_PERMISSION = {10, 200, 299}  # pages_messaging absente ou non approuvée
 
 def sortie_github(cle, valeur):
     chemin = os.environ.get("GITHUB_OUTPUT")
@@ -145,6 +151,55 @@ class CacheApp:
                 self.modifie = False
             self.dernier_push = time.time()
 
+class MessagesApp:
+    """Garde inbox/messages.json à jour pour l'app (Messenger de la Page).
+    Isolé : une erreur ici met seulement Messenger en pause, jamais la veille des commentaires."""
+    def __init__(self, lecteur):
+        self.lecteur = lecteur
+        self.dernier = 0.0; self.dernier_push = 0.0
+        self.pause_jusqua = 0.0
+        self.modifie = False; self.actif = True
+
+    def actualiser(self):
+        if not self.actif: return
+        maintenant = time.time()
+        pct = gm.USAGE["pct"]
+        if maintenant < self.pause_jusqua or pct >= 75: return
+        if maintenant - self.dernier < MESSAGES_SECONDES * (2 if pct >= 50 else 1): return
+        self.dernier = maintenant
+        appels_avant = gm.APPELS["graph"]
+        try:
+            conversations = self.lecteur.lire()
+        except gm.comment_store.FacebookError as exc:
+            if exc.code in CODES_PERMISSION:
+                print(f"Messenger : permission refusée (code {exc.code}). Il faut pages_messaging sur le jeton de Page : "
+                      "lecture désactivée jusqu'à la prochaine session.", flush=True)
+                self.actif = False
+            elif exc.code in CODES_LIMITE or exc.status == 429:
+                print("Messenger : limite d'appels signalée par Facebook, pause de 15 min.", flush=True)
+                self.pause_jusqua = maintenant + 900
+            else:
+                print(f"Messenger : lecture impossible (HTTP {exc.status}, code {exc.code}), nouvel essai dans 5 min.", flush=True)
+                self.pause_jusqua = maintenant + 300
+            return
+        quand = dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        nouveau = lecture_messages.construire_cache_messages(conversations, gm.PAGE_ID, quand)
+        chemin = gm.P("inbox", "messages.json")
+        ancien = gm.jload(chemin, None)
+        if ancien is None or lecture_messages.sans_horodatage(ancien) != lecture_messages.sans_horodatage(nouveau):
+            gm.jsave(chemin, nouveau)
+            self.modifie = True
+        s = self.lecteur.stats
+        print(f"Messenger : {len(conversations)} conversation(s) — {s['relues']} relue(s), {s['reutilisees']} en cache — "
+              f"appels Facebook : {gm.APPELS['graph'] - appels_avant} — quota utilisé : {gm.USAGE['pct']} %", flush=True)
+
+    def pousser(self, force=False):
+        if not self.modifie: return
+        if force or time.time() - self.dernier_push >= PUSH_MESSAGES_SECONDES:
+            if enregistrer("Cache messages", ["inbox/messages.json"]):
+                self.modifie = False
+            self.dernier_push = time.time()
+
 def main():
     cfg = gm.jload(gm.P("glm", "config.json"), {})
     if not cfg.get("actif", True):
@@ -157,6 +212,8 @@ def main():
     lecteur = lecture_cache.LecteurCache(gm.PAGE_ID, gm.TOKEN, gm.GRAPH, lambda url: gm.http(url),
                                          balayage_minutes=BALAYAGE_MINUTES, journal=gm.log)
     cache_app = CacheApp()
+    messages_app = MessagesApp(lecture_messages.LecteurMessages(
+        gm.PAGE_ID, gm.TOKEN, gm.GRAPH, lambda url: gm.http(url), journal=gm.log))
     print(f"Veille démarrée ({'TEST' if DRY else 'RÉEL'}) : {DUREE // 60} min, contrôle toutes les {INTERVALLE} s, "
           f"balayage complet toutes les {BALAYAGE_MINUTES} min, "
           f"files d'attente {'gérées ici' if FILE_ATTENTE_ACTIVE else 'laissées aux workflows'}.")
@@ -199,6 +256,11 @@ def main():
                 enregistrer("GLM : état partiel des commentaires")
             cache_app.actualiser(posts)
             cache_app.pousser()
+            try:
+                messages_app.actualiser()
+                messages_app.pousser()
+            except Exception as exc:  # Messenger ne doit jamais bloquer les commentaires ni les files d'attente
+                print(f"Messenger : erreur inattendue ({type(exc).__name__}), ignorée.", flush=True)
             if FILE_ATTENTE_ACTIVE:
                 if not synchroniser(): print("Avertissement : synchronisation du dépôt de données impossible.", flush=True)
                 traites = file_attente.traiter(gm, enregistrer, dry=DRY)
@@ -218,6 +280,7 @@ def main():
         if attente > INTERVALLE: print(f"Quota à {gm.USAGE['pct']} % : cycle suivant dans {attente} s.", flush=True)
         dormir(attente)
     cache_app.pousser(force=True)
+    messages_app.pousser(force=True)
     enregistrer("GLM : fin de session")
     print(f"Session terminée : {total_reponses} réponse(s) envoyée(s).")
     sortie_github("relance", "oui"); return 0

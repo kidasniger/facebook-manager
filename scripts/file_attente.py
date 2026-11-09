@@ -4,6 +4,7 @@ Remplace, en Python, les quatre workflows qu'on lançait un par un :
   posts/queue.json    (publier.yml)         texte seul
   posts/avance.json   (publier-avance.yml)  photo, vidéo, programmation
   posts/replies.json  (repondre.yml)        réponses à des commentaires
+  posts/messages.json (nouveau)             réponses Messenger (uniquement ici, pas d'ancien workflow)
   posts/actions.json  (actions-posts.yml)   modifier / supprimer un post
 
 Garanties :
@@ -18,10 +19,13 @@ import json
 import os
 import subprocess
 import time
+import urllib.parse
 
-FICHIERS = ("posts/queue.json", "posts/avance.json", "posts/replies.json", "posts/actions.json")
+FICHIERS = ("posts/queue.json", "posts/avance.json", "posts/replies.json",
+            "posts/messages.json", "posts/actions.json")
 PAUSE_ENTRE_ENVOIS = 3
 MAX_PAR_CYCLE = 5
+MAX_MESSAGE_ENCODE = 6500   # le texte voyage dans l'URL : on borne sa taille une fois encodé
 
 
 def _maintenant():
@@ -122,6 +126,38 @@ def _repondre(gm, item):
     return {"status": "error", "erreur": _erreur(res)}
 
 
+def _erreur_message(res):
+    """Messages d'erreur compréhensibles pour les cas courants de l'envoi Messenger."""
+    err = (res or {}).get("error") if isinstance(res, dict) else None
+    if isinstance(err, dict):
+        if err.get("code") == 10 and err.get("error_subcode") == 2018278:
+            return "fenêtre de 24 h dépassée : la personne doit d'abord réécrire"
+        if err.get("code") in (10, 200):
+            return "permission refusée (pages_messaging ou fenêtre de 24 h)"
+        if err.get("code") == 551:
+            return "destinataire indisponible"
+    return _erreur(res)
+
+
+def _repondre_message(gm, item):
+    destinataire, message = str(item.get("recipient_id") or ""), item.get("message") or ""
+    if not destinataire or not message.strip():
+        return {"status": "error", "erreur": "destinataire ou message manquant"}
+    # Contenu dans l'URL, jeton dans le corps : ne dépend pas de la façon dont gm.http encode le corps.
+    params = urllib.parse.urlencode({
+        "recipient": json.dumps({"id": destinataire}),
+        "message": json.dumps({"text": message}, ensure_ascii=False),
+        "messaging_type": "RESPONSE",
+    })
+    if len(params) > MAX_MESSAGE_ENCODE:
+        return {"status": "error", "erreur": "message trop long"}
+    st, res = gm.http(f"{gm.GRAPH}/{gm.PAGE_ID}/messages?{params}", {"access_token": gm.TOKEN})
+    mid = res.get("message_id") if isinstance(res, dict) else None
+    if st == 200 and mid:
+        return {"status": "replied", "message_id": mid}
+    return {"status": "error", "erreur": _erreur_message(res)}
+
+
 def _agir(gm, item):
     action, pid = item.get("action"), item.get("post_id")
     if not pid:
@@ -141,6 +177,7 @@ TRAITEMENTS = (
     ("posts/queue.json", _publier_texte),
     ("posts/avance.json", _publier_avance),
     ("posts/replies.json", _repondre),
+    ("posts/messages.json", _repondre_message),
     ("posts/actions.json", _agir),
 )
 
