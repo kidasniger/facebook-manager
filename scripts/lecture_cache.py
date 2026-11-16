@@ -22,6 +22,7 @@ except ImportError:  # exécution directe : python3 scripts/glm_boucle.py
     import comment_store
 
 CHAMPS_POSTS = "id,message,story,created_time,permalink_url"
+EXTRAS = "full_picture,shares,likes.summary(true).limit(0)"
 RESUME = "comments.filter(stream).summary(true).limit(0)"
 
 
@@ -50,16 +51,22 @@ class LecteurCache:
         self.journal = journal
         self.cache = {}            # id du post -> {meta, compte, arbre, verifie}
         self.dernier_balayage = 0.0
+        self.extras_ok = True      # passe à False si Facebook refuse image/likes/partages
         self.resume_ok = True      # passe à False si Facebook refuse le champ de comptage
         self.stats = {"relus": 0, "reutilises": 0, "balayage": False}
 
     def _lister(self, max_pages):
-        champs = CHAMPS_POSTS + ("," + RESUME if self.resume_ok else "")
+        champs = (CHAMPS_POSTS + ("," + EXTRAS if self.extras_ok else "")
+                  + ("," + RESUME if self.resume_ok else ""))
         url = f"{self.graph}/{self.page_id}/posts?" + urllib.parse.urlencode(
             {"fields": champs, "limit": 100, "access_token": self.token})
         try:
             return comment_store.fetch_all(url, self.get_json, max_pages=max_pages)
         except comment_store.FacebookError as exc:
+            if self.extras_ok and exc.code == 100:
+                self.extras_ok = False
+                self.journal("Cache : Facebook refuse image/likes/partages, lecture sans ces champs.")
+                return self._lister(max_pages)
             if self.resume_ok and exc.code == 100:
                 # Champ de comptage refusé : retour à la lecture complète à chaque cycle.
                 self.resume_ok = False
@@ -115,18 +122,19 @@ class LecteurCache:
 
 
 def lire_page(get_json, graph, page_id, token):
-    """Nom et nombre d'abonnés de la Page (affichés par l'app). None si la lecture échoue."""
-    url = f"{graph}/{page_id}?" + urllib.parse.urlencode(
-        {"fields": "id,name,fan_count,followers_count", "access_token": token})
-    code, payload = get_json(url)
-    if code != 200 or not isinstance(payload, dict) or payload.get("error"):
-        return None
-    return payload
+    """Nom, @identifiant et abonnés de la Page (affichés par l'app). None si la lecture échoue."""
+    for champs in ("id,name,username,fan_count,followers_count", "id,name,fan_count,followers_count"):
+        url = f"{graph}/{page_id}?" + urllib.parse.urlencode({"fields": champs, "access_token": token})
+        code, payload = get_json(url)
+        if code == 200 and isinstance(payload, dict) and not payload.get("error"):
+            return payload
+    return None
 
 
 def _court(c):
     return {"id": c.get("id"), "message": c.get("message", ""),
-            "created_time": c.get("created_time"), "from": c.get("from")}
+            "created_time": c.get("created_time"), "from": c.get("from"),
+            "like_count": c.get("like_count") or 0}
 
 
 def construire_cache_commentaires(posts, page, page_id, quand, nb_posts=15):
@@ -152,6 +160,9 @@ def construire_cache_commentaires(posts, page, page_id, quand, nb_posts=15):
             racines.append(entree)
         sortie.append({"id": p.get("id"), "message": p.get("message"), "story": p.get("story"),
                        "created_time": p.get("created_time"), "permalink_url": p.get("permalink_url"),
+                       "full_picture": p.get("full_picture"),
+                       "likes_total": ((p.get("likes") or {}).get("summary") or {}).get("total_count"),
+                       "shares_total": (p.get("shares") or {}).get("count"),
                        "comments": {"data": racines}})
     return {"updated": quand, "page": page or {}, "posts": sortie}
 

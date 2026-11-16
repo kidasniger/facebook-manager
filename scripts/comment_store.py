@@ -136,7 +136,7 @@ def fetch_post_comments(post, page_id, token, graph, get_json):
     """Charge tous les niveaux de commentaires/réponses d'UNE publication et les met à plat
     dans post["comments"]. Même comportement qu'avant, isolé pour pouvoir relire un seul post."""
     comment_query = urllib.parse.urlencode({
-        "fields": "id,message,created_time,from{id,name},comment_count",
+        "fields": "id,message,created_time,from{id,name},comment_count,like_count",
         "limit": 100,
         "access_token": token,
     })
@@ -164,7 +164,7 @@ def fetch_post_comments(post, page_id, token, graph, get_json):
         # ce compteur peut être absent ou incohérent alors que des réponses existent.
         # Interroger chaque edge /comments permet de découvrir toute la profondeur.
         child_query = urllib.parse.urlencode({
-            "fields": "id,message,created_time,from{id,name},comment_count",
+            "fields": "id,message,created_time,from{id,name},comment_count,like_count",
             "limit": 100,
             "access_token": token,
         })
