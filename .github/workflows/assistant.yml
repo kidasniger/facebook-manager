@@ -1,0 +1,46 @@
+name: Assistant IA (relais du chat de l'application)
+
+on:
+  workflow_dispatch:
+    inputs:
+      message:
+        description: 'Message isolé à traiter (mode suggestion). Vide = discussion glm/chat.json.'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+concurrency:
+  group: assistant-chat
+  cancel-in-progress: false
+
+jobs:
+  repondre:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Récupérer les données (dépôt privé)
+        uses: actions/checkout@v4
+        with:
+          repository: kidasniger/facebook-data
+          token: ${{ secrets.DATA_PAT }}
+          path: data
+
+      - name: Répondre via Z.ai
+        env:
+          ZAI_API_KEY: ${{ secrets.ZAI_API_KEY }}
+          ZAI_BASE_URL: ${{ secrets.ZAI_BASE_URL }}
+          ZAI_MODEL: ${{ secrets.ZAI_MODEL }}
+          INPUT_MESSAGE: ${{ github.event.inputs.message || '' }}
+          DATA_DIR: ${{ github.workspace }}/data
+        run: python3 scripts/assistant.py
+
+      - name: Enregistrer dans le dépôt privé
+        if: always()
+        uses: ./.github/actions/save-data
+        with:
+          paths: glm/chat.json glm/reponse.json
+          message: "Assistant IA"
