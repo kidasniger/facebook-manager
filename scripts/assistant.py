@@ -10,6 +10,7 @@ l'application). Deux modes :
   dans glm/reponse.json (mode suggestion de réponse d'un commentaire).
 
 Secrets requis : ZAI_API_KEY. Optionnels : ZAI_BASE_URL, ZAI_MODEL.
+Le modèle et l'API sont repris de glm/config.json (comme le reste du bot).
 La clé ne doit jamais être affichée ni écrite dans le dépôt.
 """
 import json
@@ -20,8 +21,24 @@ import urllib.request
 from datetime import datetime, timezone
 
 DATA = os.environ.get("DATA_DIR") or "data"
-ZAI_URL = (os.environ.get("ZAI_BASE_URL") or "https://api.z.ai/api/paas/v4").rstrip("/")
-MODEL = os.environ.get("ZAI_MODEL") or "glm-4.5"
+
+
+def lire_cfg():
+    try:
+        with open(os.path.join(DATA, "glm", "config.json"), encoding="utf-8") as f:
+            c = json.load(f)
+        return c if isinstance(c, dict) else {}
+    except Exception:
+        return {}
+
+
+CFG = lire_cfg()
+_url = (os.environ.get("ZAI_BASE_URL") or CFG.get("api_url") or
+        "https://api.z.ai/api/paas/v4/chat/completions").strip()
+if not _url.endswith("/chat/completions"):
+    _url = _url.rstrip("/") + "/chat/completions"
+ZAI_URL = _url
+MODEL = (os.environ.get("ZAI_MODEL") or CFG.get("modele") or "glm-4.5-flash").strip()
 CHAT = os.path.join(DATA, "glm", "chat.json")
 REPONSE = os.path.join(DATA, "glm", "reponse.json")
 INPUT_MESSAGE = (os.environ.get("INPUT_MESSAGE") or "").strip()
@@ -90,7 +107,7 @@ def glm(messages):
     }
     code = 0
     for _ in range(3):
-        code, res = http(ZAI_URL + "/chat/completions", payload, key)
+        code, res = http(ZAI_URL, payload, key)
         if code == 200 and res.get("choices"):
             m = res["choices"][0].get("message") or {}
             return (m.get("content") or "").strip()
@@ -98,6 +115,7 @@ def glm(messages):
             payload.pop("thinking")  # modèle sans option thinking : on réessaie
             continue
         if code in (429, 500, 502, 503, 0):
+            print("Essai Z.ai (HTTP %s) : %s" % (code, str(res.get("error") or res)[:160]))
             time.sleep(6)
             continue
         raise RuntimeError("Erreur API Z.ai (HTTP %s) : %s" % (code, str(res)[:200]))
