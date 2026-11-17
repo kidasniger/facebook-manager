@@ -40,7 +40,18 @@ jobs:
 
       - name: Enregistrer dans le dépôt privé
         if: always()
-        uses: ./.github/actions/save-data
-        with:
-          paths: glm/chat.json glm/reponse.json
-          message: "Assistant IA"
+        run: |
+          set -euo pipefail
+          cd "$GITHUB_WORKSPACE/data"
+          git config user.name "github-actions"
+          git config user.email "actions@users.noreply.github.com"
+          git add glm/chat.json 2>/dev/null || true
+          git add glm/reponse.json 2>/dev/null || true
+          if git diff --cached --quiet; then echo "Rien à enregistrer."; exit 0; fi
+          git commit -q -m "Assistant IA"
+          for i in 1 2 3 4; do
+            if git pull -q --rebase --autostash && git push -q; then echo "Enregistré dans le dépôt privé."; exit 0; fi
+            sleep $((i * 4))
+          done
+          echo "Échec du push vers le dépôt de données."
+          exit 1
