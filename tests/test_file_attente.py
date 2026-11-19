@@ -147,6 +147,22 @@ class FileAttenteTests(unittest.TestCase):
         self.assertEqual("pending", data[1]["status"])   # l'autre reste à envoyer
         self.assertEqual([], gm.appels)
 
+    def test_action_like(self):
+        self.ecrire("posts/actions.json", [
+            {"post_id": "p1", "action": "like", "status": "pending"}])
+        gm = faux_gm(self.racine, [(200, {"success": True})])
+        self.assertEqual(1, self.traiter(gm))
+        item = self.lire("posts/actions.json")[0]
+        self.assertEqual("done", item["status"])
+        self.assertIn("/p1/likes", gm.appels[0]["url"])
+
+    def test_action_like_deja_aime_compte_comme_fait(self):
+        self.ecrire("posts/actions.json", [
+            {"post_id": "p1", "action": "like", "status": "pending"}])
+        gm = faux_gm(self.racine, [(200, {"error": {"code": 360, "message": "already liked"}})])
+        self.assertEqual(1, self.traiter(gm))
+        self.assertEqual("done", self.lire("posts/actions.json")[0]["status"])
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -166,6 +166,13 @@ def _agir(gm, item):
         st, res = gm.http(f"{gm.GRAPH}/{pid}", {"access_token": gm.TOKEN}, method="DELETE")
     elif action == "edit":
         st, res = gm.http(f"{gm.GRAPH}/{pid}", {"message": item.get("message") or "", "access_token": gm.TOKEN})
+    elif action == "like":
+        st, res = gm.http(f"{gm.GRAPH}/{pid}/likes", {"access_token": gm.TOKEN})
+        if st == 200 and isinstance(res, dict) and (res.get("success") is True or res.get("id")):
+            return {"status": "done"}
+        if isinstance(res, dict) and "already" in str((res.get("error") or {}).get("message", "")).lower():
+            return {"status": "done"}  # déjà aimé : même effet
+        return {"status": "error", "erreur": _erreur(res)}
     else:
         return {"status": "error", "erreur": "action inconnue"}
     if isinstance(res, dict) and res.get("success") is True:

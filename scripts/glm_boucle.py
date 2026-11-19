@@ -20,6 +20,7 @@ import lecture_cache
 import lecture_messages
 import file_attente
 import taches_periodiques
+import aimes_auto
 DUREE = int(os.environ.get("DUREE_MINUTES") or 330) * 60
 INTERVALLE = max(20, int(os.environ.get("INTERVALLE_SECONDS") or 60))
 BALAYAGE_MINUTES = int(os.environ.get("BALAYAGE_MINUTES") or 20)
@@ -265,6 +266,8 @@ def main():
                 if not synchroniser(): print("Avertissement : synchronisation du dépôt de données impossible.", flush=True)
                 traites = file_attente.traiter(gm, enregistrer, dry=DRY)
                 if traites: print(f"-> {traites} élément(s) de la file d'attente traité(s).", flush=True)
+                aimes = aimes_auto.traiter(gm, enregistrer, dry=DRY)
+                if aimes: print(f"-> {aimes} publication(s) aimée(s) automatiquement.", flush=True)
             if time.time() - derniere_stats >= STATS_HEURES * 3600 and gm.USAGE["pct"] < 75:
                 if not DRY:
                     lus, voulus = taches_periodiques.ecrire_statistiques(gm)
