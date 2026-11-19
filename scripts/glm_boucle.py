@@ -21,6 +21,7 @@ import lecture_messages
 import file_attente
 import taches_periodiques
 import aimes_auto
+import sante
 DUREE = int(os.environ.get("DUREE_MINUTES") or 330) * 60
 INTERVALLE = max(20, int(os.environ.get("INTERVALLE_SECONDS") or 60))
 BALAYAGE_MINUTES = int(os.environ.get("BALAYAGE_MINUTES") or 20)
@@ -222,9 +223,16 @@ def main():
         file_attente.recuperer_interrompus(gm, enregistrer)
     stats_a_jour = taches_periodiques.statistiques_a_jour(gm, STATS_HEURES)
     derniere_stats = time.time() if stats_a_jour else 0.0
-    echecs = 0; total_reponses = 0
+    session_sante = {
+        "debut": dt.datetime.fromtimestamp(DEBUT, dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "duree_min": DUREE // 60,
+    }
+    echecs = 0; total_reponses = 0; cycles = 0
     while time.time() - DEBUT < DUREE:
         try:
+            cycles += 1
+            session_sante["cycles"] = cycles
+            session_sante["reponses"] = total_reponses
             appels_avant = gm.APPELS["graph"]
             statut, res = lire_posts(lecteur)
             if statut != 200:
@@ -232,8 +240,13 @@ def main():
                 detail = str(err.get("message") or err.get("erreur") or "réponse Facebook invalide")[:300]
                 print(f"ERREUR FACEBOOK — lecture des publications/commentaires : HTTP {statut}, code {code}, sous-code {err.get('error_subcode')} — {detail}", flush=True)
                 if code in CODES_JETON:
-                    print("Jeton Facebook invalide ou expiré : renouvellement nécessaire."); sortie_github("relance", "non"); return 1
+                    print("Jeton Facebook invalide ou expiré : renouvellement nécessaire.")
+                    sante.maj(gm, session=session_sante, echecs=echecs, extra=(detail,))
+                    sante.pousser(gm, enregistrer, force=True)
+                    sortie_github("relance", "non"); return 1
                 echecs += 1
+                sante.maj(gm, session=session_sante, echecs=echecs, extra=(detail,))
+                sante.pousser(gm, enregistrer)
                 attente = pause_apres_erreur(code, statut, echecs)
                 if attente >= 300: print(f"Pause de {attente // 60} min avant de réessayer (limite ou blocage signalé par Facebook).", flush=True)
                 dormir(attente)
@@ -268,6 +281,8 @@ def main():
                 if traites: print(f"-> {traites} élément(s) de la file d'attente traité(s).", flush=True)
                 aimes = aimes_auto.traiter(gm, enregistrer, dry=DRY)
                 if aimes: print(f"-> {aimes} publication(s) aimée(s) automatiquement.", flush=True)
+            sante.maj(gm, session=session_sante, echecs=echecs)
+            sante.pousser(gm, enregistrer)
             if time.time() - derniere_stats >= STATS_HEURES * 3600 and gm.USAGE["pct"] < 75:
                 if not DRY:
                     lus, voulus = taches_periodiques.ecrire_statistiques(gm)
@@ -277,6 +292,9 @@ def main():
         except Exception as e:
             echecs += 1
             print(f"ERREUR BOUCLE ({type(e).__name__}) : {str(e)[:300]}", flush=True)
+            sante.maj(gm, session=session_sante, echecs=echecs,
+                      extra=(f"{type(e).__name__}: {str(e)[:160]}",))
+            sante.pousser(gm, enregistrer)
             dormir(min(300, INTERVALLE * echecs))
             continue
         attente = pause_selon_quota(INTERVALLE)
@@ -284,6 +302,8 @@ def main():
         dormir(attente)
     cache_app.pousser(force=True)
     messages_app.pousser(force=True)
+    sante.maj(gm, session=session_sante, echecs=echecs)
+    sante.pousser(gm, enregistrer, force=True)
     enregistrer("GLM : fin de session")
     print(f"Session terminée : {total_reponses} réponse(s) envoyée(s).")
     sortie_github("relance", "oui"); return 0
