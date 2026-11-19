@@ -22,7 +22,8 @@ except ImportError:  # exécution directe : python3 scripts/glm_boucle.py
     import comment_store
 
 CHAMPS_POSTS = "id,message,story,created_time,permalink_url"
-EXTRAS = "full_picture,shares,likes.summary(true).limit(0)"
+EXTRAS = ("full_picture,reactions.summary(total_count).summary(reaction_type).limit(0),"
+          "likes.summary(true).limit(0)")
 RESUME = "comments.filter(stream).summary(true).limit(0)"
 
 
@@ -158,10 +159,16 @@ def construire_cache_commentaires(posts, page, page_id, quand, nb_posts=15):
             entree["page_a_repondu"] = any(
                 str((s.get("from") or {}).get("id") or "") == str(page_id) for s in sous)
             racines.append(entree)
+        rs = ((p.get("reactions") or {}).get("summary") or {})
+        types = rs.get("reaction_type") if isinstance(rs.get("reaction_type"), dict) else {}
+        total = rs.get("total_count")
+        if not isinstance(total, int):
+            total = ((p.get("likes") or {}).get("summary") or {}).get("total_count")
         sortie.append({"id": p.get("id"), "message": p.get("message"), "story": p.get("story"),
                        "created_time": p.get("created_time"), "permalink_url": p.get("permalink_url"),
                        "full_picture": p.get("full_picture"),
-                       "likes_total": ((p.get("likes") or {}).get("summary") or {}).get("total_count"),
+                       "likes_total": total,
+                       "reactions_types": {k: v for k, v in types.items() if isinstance(v, int)},
                        "shares_total": (p.get("shares") or {}).get("count"),
                        "comments": {"data": racines}})
     return {"updated": quand, "page": page or {}, "posts": sortie}

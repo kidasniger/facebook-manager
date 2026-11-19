@@ -157,5 +157,26 @@ class CacheCommentairesTests(unittest.TestCase):
         self.assertEqual(lecture_cache.sans_horodatage(out), lecture_cache.sans_horodatage(dict(out, updated="Z")))
 
 
+    def test_reactions_detaillees_dans_le_cache(self):
+        posts = [{"id": "p1", "message": "Salut", "created_time": "2026-01-02",
+                  "reactions": {"summary": {"total_count": 7,
+                                            "reaction_type": {"like": 5, "love": 2}}},
+                  "likes": {"summary": {"total_count": 7}},
+                  "comments": {"data": []}}]
+        out = lecture_cache.construire_cache_commentaires(posts, {}, PAGE, "Q")
+        p = out["posts"][0]
+        self.assertEqual(7, p["likes_total"])
+        self.assertEqual({"like": 5, "love": 2}, p["reactions_types"])
+
+    def test_repli_sur_likes_sans_reactions(self):
+        posts = [{"id": "p1", "message": "Salut", "created_time": "2026-01-02",
+                  "likes": {"summary": {"total_count": 9}},
+                  "comments": {"data": []}}]
+        out = lecture_cache.construire_cache_commentaires(posts, {}, PAGE, "Q")
+        p = out["posts"][0]
+        self.assertEqual(9, p["likes_total"])
+        self.assertEqual({}, p["reactions_types"])
+
+
 if __name__ == "__main__":
     unittest.main()

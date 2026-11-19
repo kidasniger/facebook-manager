@@ -185,6 +185,12 @@ def _agir(gm, item):
         if isinstance(res, dict) and "already" in str((res.get("error") or {}).get("message", "")).lower():
             return {"status": "done"}  # déjà aimé : même effet
         return {"status": "error", "erreur": _erreur(res)}
+    elif action == "pin":
+        st, res = gm.http(f"{gm.GRAPH}/{pid}", {"is_pinned": "true", "access_token": gm.TOKEN})
+    elif action == "unpin":
+        st, res = gm.http(f"{gm.GRAPH}/{pid}", {"is_pinned": "false", "access_token": gm.TOKEN})
+    elif action == "hide":
+        st, res = gm.http(f"{gm.GRAPH}/{pid}", {"is_hidden": "true", "access_token": gm.TOKEN})
     else:
         return {"status": "error", "erreur": "action inconnue"}
     if isinstance(res, dict) and res.get("success") is True:
