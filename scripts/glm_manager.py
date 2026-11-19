@@ -12,6 +12,7 @@ import json
 import os
 import re
 import sys
+import unicodedata
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -435,6 +436,28 @@ def phrase_longueur(longueur):
     return LONGUEURS.get(str(longueur), LONGUEURS["normale"])
 
 
+def sans_accents(s):
+    """Texte sans accents ni majuscules, pour comparer avec le réglage de l'appli."""
+    return unicodedata.normalize("NFD", str(s or "")).encode("ascii", "ignore").decode("ascii").lower()
+
+
+def mot_interdit(texte, cfg):
+    """Premier mot interdit présent dans le texte, réglé dans l'appli de contrôle
+    (glm/config.json, clé « moderation » : {"actif": true, "mots": [...]}, un mot
+    ou une expression par ligne). Comparaison sans accents ni majuscules ; un mot
+    d'un seul caractère est ignoré pour ne pas bloquer tous les commentaires.
+    Retourne None si le filtre est désactivé ou sans correspondance."""
+    m = (cfg.get("moderation") or {}) if isinstance(cfg, dict) else {}
+    if not m.get("actif") or not isinstance(m.get("mots"), list):
+        return None
+    t = sans_accents(texte)
+    for mot in m["mots"]:
+        w = sans_accents(mot).strip()
+        if len(w) >= 2 and w in t:
+            return str(mot)
+    return None
+
+
 def gerer_reponses(cfg, state, posts):
     cr = cfg.get("reponses", {})
     if not cr.get("actif", True):
@@ -505,6 +528,15 @@ def gerer_reponses(cfg, state, posts):
             if verdict == "humain":
                 humain.append({"comment_id": c["id"], "post_id": post["id"], "texte": texte[:300], "raison": raison,
                                "date": NOW.strftime("%Y-%m-%dT%H:%M:%SZ")})
+                continue
+            # Mots interdits réglés dans l'appli (glm/config.json, clé « moderation ») :
+            # pas de réponse automatique, le commentaire attend un humain dans À traiter.
+            bloque = mot_interdit(texte, cfg)
+            if bloque:
+                humain.append({"comment_id": c["id"], "post_id": post["id"], "texte": texte[:300],
+                               "raison": f"mot interdit réglé dans l'appli ({bloque})",
+                               "date": NOW.strftime("%Y-%m-%dT%H:%M:%SZ")})
+                log(f"Réponse suspendue : mot interdit dans le commentaire {c.get('id')} ({bloque}).")
                 continue
             textes = {str(x.get("id")): (x.get("message") or "") for x in (post.get("comments") or {}).get("data") or []}
             parent = textes.get(str(c.get("parent_id") or ""), "")
