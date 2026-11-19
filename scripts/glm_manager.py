@@ -410,11 +410,39 @@ def valider_reponse(r):
     return None
 
 
+# Ton et longueur des réponses automatiques, réglés dans l'appli de contrôle
+# (glm/config.json, clé « reponses »). Les fragments ci-dessous sont injectés
+# dans le prompt ; une valeur inconnue retombe sur le défaut historique.
+TONS = {
+    "chaleureux": "chaleureuse et naturelle ; tutoie sauf si la personne vouvoie",
+    "neutre": "polie, professionnelle et sobre ; vouvoie par défaut",
+    "direct": "courte, franche et concrète ; tutoie sauf si la personne vouvoie",
+}
+LONGUEURS = {
+    "courte": "1 phrase, 140 caractères maximum",
+    "normale": "1 à 2 phrases, 280 caractères maximum",
+    "detaillee": "2 à 3 phrases, 450 caractères maximum",
+}
+
+
+def phrase_ton(ton):
+    """Fragment de prompt correspondant au ton réglé (défaut : chaleureux)."""
+    return TONS.get(str(ton), TONS["chaleureux"])
+
+
+def phrase_longueur(longueur):
+    """Fragment de prompt correspondant à la longueur réglée (défaut : normale)."""
+    return LONGUEURS.get(str(longueur), LONGUEURS["normale"])
+
+
 def gerer_reponses(cfg, state, posts):
     cr = cfg.get("reponses", {})
     if not cr.get("actif", True):
         log("Réponses : désactivées dans glm/config.json")
         return [], []
+    ton = str(cr.get("ton") or "chaleureux")
+    longueur = str(cr.get("longueur") or "normale")
+    log(f"Réponses : ton {ton}, longueur {longueur}")
     # Une publication acceptée mais non confirmée reste en attente : vérifier le même ID
     # avant tout nouvel envoi, pour ne jamais créer de doublon.
     pending = state.get("pending_verification", [])
@@ -455,8 +483,8 @@ def gerer_reponses(cfg, state, posts):
         "Commentaire ambigu, hors sujet ou très court : réponds par un remerciement naturel.\n"
         "urgence=true UNIQUEMENT si la personne parle de se faire du mal, de suicide, de violence ou d'une menace, ou semble en danger : "
         "dans ce cas rédige une réponse prudente et bienveillante ; le commentaire reçoit toujours une réponse.\n"
-        "La réponse : 1 à 2 phrases, 280 caractères maximum, même langue que le commentaire, chaleureuse et naturelle, sans lien, "
-        "sans hashtag, sans mention @, sans numéro, sans promesse, sans rien qui suggère une IA. Tutoie sauf si la personne vouvoie. "
+        f"La réponse : {phrase_longueur(longueur)}, même langue que le commentaire, {phrase_ton(ton)}, sans lien, "
+        "sans hashtag, sans mention @, sans numéro, sans promesse, sans rien qui suggère une IA. "
         "Ne recopie pas le commentaire. repondre doit toujours être true et urgence toujours false.\n"
         "Varie tes formulations : ne commence jamais deux réponses de la même façon. "
         "Si tu connais le prénom de la personne, utilise-le naturellement (sans exagérer).\n"

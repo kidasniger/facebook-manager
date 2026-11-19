@@ -125,7 +125,35 @@ def candidates(posts, handled_entries):
     return found
 
 
+# Ton et longueur des réponses, réglés dans l'appli de contrôle
+# (glm/config.json, clé « reponses ») et lus à chaque lancement.
+TONS_AUTO = {
+    "chaleureux": "chaleureuse, avec une touche d'humour possible, 0 à 2 émojis",
+    "neutre": "polie, professionnelle et sobre, sans émoji",
+    "direct": "franche et concrète, sans détour, sans émoji",
+}
+LONGUEURS_AUTO = {
+    "courte": "1 phrase, 140 caractères maximum",
+    "normale": "1 à 3 phrases, 280 caractères maximum",
+    "detaillee": "2 à 4 phrases, 450 caractères maximum",
+}
+
+
+def lire_reponses_cfg():
+    """Fragments (ton, longueur) réglés dans l'appli ; défauts historiques sinon."""
+    try:
+        with open(comment_store.data_path("glm", "config.json"), encoding="utf-8") as f:
+            cr = (json.load(f) or {}).get("reponses") or {}
+    except (OSError, ValueError):
+        cr = {}
+    ton = str(cr.get("ton") or "chaleureux")
+    longueur = str(cr.get("longueur") or "normale")
+    return (TONS_AUTO.get(ton, TONS_AUTO["chaleureux"]),
+            LONGUEURS_AUTO.get(longueur, LONGUEURS_AUTO["normale"]))
+
+
 def build_system_prompt():
+    ton, longueur = lire_reponses_cfg()
     ligne = read_text(comment_store.data_path("LIGNE_EDITORIALE.md"), 3500)
     faits = read_text(comment_store.data_path("faits.md"), 3500)
     return f"""Tu rédiges la réponse de la Page Facebook d'Aboubacar Sidik (marque KI DAS) à un commentaire.
@@ -140,7 +168,7 @@ QUAND NE PAS RÉPONDRE (repondre = false)
 Commentaire de test, simple mention ou simple tag, spam, lien, insulte, provocation, politique, religion, plainte, demande de prix, de devis, de délai ou de contact, question technique pointue, ou toute question dont la réponse n'est pas dans les FAITS. Dans le doute, ne réponds pas : Aboubacar répondra lui-même.
 
 QUAND RÉPONDRE
-Remerciement, compliment, encouragement, réaction simple ou question dont la réponse est dans les FAITS. Réponse courte : 1 à 3 phrases, 280 caractères maximum, chaleureuse, avec une touche d'humour possible, 0 à 2 émojis, dans la langue du commentaire (français ou anglais).
+Remerciement, compliment, encouragement, réaction simple ou question dont la réponse est dans les FAITS. Réponse : {longueur}, {ton}, dans la langue du commentaire (français ou anglais).
 
 FORMAT DE SORTIE
 Réponds UNIQUEMENT avec un objet JSON, sans texte autour :
