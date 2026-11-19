@@ -163,6 +163,40 @@ class FileAttenteTests(unittest.TestCase):
         self.assertEqual(1, self.traiter(gm))
         self.assertEqual("done", self.lire("posts/actions.json")[0]["status"])
 
+    def test_action_suppression_commentaire(self):
+        self.ecrire("posts/actions.json", [
+            {"post_id": "p1", "comment_id": "c1", "action": "delete_comment", "status": "pending"}])
+        gm = faux_gm(self.racine, [(200, {"success": True})])
+        self.assertEqual(1, self.traiter(gm))
+        item = self.lire("posts/actions.json")[0]
+        self.assertEqual("done", item["status"])
+        self.assertIn("/c1", gm.appels[0]["url"])
+        self.assertEqual("DELETE", gm.appels[0]["method"])
+
+    def test_suppression_commentaire_sans_post_id_fonctionne(self):
+        self.ecrire("posts/actions.json", [
+            {"comment_id": "c1", "action": "delete_comment", "status": "pending"}])
+        gm = faux_gm(self.racine, [(200, {"success": True})])
+        self.assertEqual(1, self.traiter(gm))
+        self.assertEqual("done", self.lire("posts/actions.json")[0]["status"])
+
+    def test_suppression_commentaire_deja_supprime_compte_comme_fait(self):
+        self.ecrire("posts/actions.json", [
+            {"comment_id": "c1", "action": "delete_comment", "status": "pending"}])
+        gm = faux_gm(self.racine, [(200, {"error": {"code": 9007, "message": "This comment was already deleted"}})])
+        self.assertEqual(1, self.traiter(gm))
+        self.assertEqual("done", self.lire("posts/actions.json")[0]["status"])
+
+    def test_suppression_commentaire_manquant_donne_erreur_propre(self):
+        self.ecrire("posts/actions.json", [
+            {"action": "delete_comment", "status": "pending"}])
+        gm = faux_gm(self.racine, [])
+        self.assertEqual(1, self.traiter(gm))
+        item = self.lire("posts/actions.json")[0]
+        self.assertEqual("error", item["status"])
+        self.assertIn("comment_id", item["erreur"])
+        self.assertEqual([], gm.appels)   # aucun appel Facebook inutile
+
 
 if __name__ == "__main__":
     unittest.main()

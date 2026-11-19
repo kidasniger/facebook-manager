@@ -159,7 +159,19 @@ def _repondre_message(gm, item):
 
 
 def _agir(gm, item):
-    action, pid = item.get("action"), item.get("post_id")
+    action = item.get("action")
+    if action == "delete_comment":
+        # Supprimer un commentaire : seul l'identifiant du commentaire est requis.
+        cid = item.get("comment_id")
+        if not cid:
+            return {"status": "error", "erreur": "comment_id manquant"}
+        st, res = gm.http(f"{gm.GRAPH}/{cid}", {"access_token": gm.TOKEN}, method="DELETE")
+        if st == 200 and isinstance(res, dict) and res.get("success") is True:
+            return {"status": "done"}
+        if isinstance(res, dict) and "already" in str((res.get("error") or {}).get("message", "")).lower():
+            return {"status": "done"}  # déjà supprimé : même effet
+        return {"status": "error", "erreur": _erreur(res)}
+    pid = item.get("post_id")
     if not pid:
         return {"status": "error", "erreur": "post_id manquant"}
     if action == "delete":
