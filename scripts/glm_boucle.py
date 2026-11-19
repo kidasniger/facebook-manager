@@ -85,6 +85,32 @@ def signature(posts):
                 elements.append((cid, str(comment.get("parent_id") or ""), int(comment.get("comment_count") or 0)))
     return tuple(sorted(elements))
 
+def silence_actif(now=None):
+    """Vrai pendant les heures de silence réglées dans l'appli
+    (glm/config.json, clé « horaires » : actif, debut, fin, decalage_min).
+    Lu à chaque cycle : un changement dans l'appli s'applique sans attendre
+    la session suivante. Les heures sont celles du téléphone de l'utilisateur,
+    converties avec le décalage enregistré ; la plage peut passer minuit."""
+    h = ((gm.jload(gm.P("glm", "config.json"), {}) or {}).get("horaires") or {})
+    if not h.get("actif"):
+        return False
+    try:
+        debut = str(h.get("debut") or "")
+        fin = str(h.get("fin") or "")
+        if ":" not in debut or ":" not in fin:
+            return False
+        a = int(debut.split(":")[0]) * 60 + int(debut.split(":")[1])
+        b = int(fin.split(":")[0]) * 60 + int(fin.split(":")[1])
+        if a == b:
+            return False
+        decalage = dt.timedelta(minutes=int(h.get("decalage_min") or 0))
+        moment = (now or dt.datetime.now(dt.timezone.utc)) + decalage
+        n = moment.hour * 60 + moment.minute
+        return (a <= n < b) if a < b else (n >= a or n < b)
+    except Exception:
+        return False
+
+
 def passe(cfg, state, posts):
     gm.journal.clear(); gm.erreurs.clear()
     gm.NOW = dt.datetime.now(dt.timezone.utc)
@@ -227,7 +253,7 @@ def main():
         "debut": dt.datetime.fromtimestamp(DEBUT, dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "duree_min": DUREE // 60,
     }
-    echecs = 0; total_reponses = 0; cycles = 0
+    echecs = 0; total_reponses = 0; cycles = 0; silence_precedent = None
     while time.time() - DEBUT < DUREE:
         try:
             cycles += 1
@@ -260,7 +286,20 @@ def main():
                   f"appels Facebook : {gm.APPELS['graph'] - appels_avant} — quota utilisé : {gm.USAGE['pct']} %", flush=True)
             # Chaque cycle réexamine tout l'arbre. Le registre partagé écarte les succès
             # déjà traités ; les erreurs ne sont pas inscrites au registre et seront retentées.
-            envoyees, humain = passe(cfg, state, posts)
+            # Réponses automatiques : suspendues pendant les heures de silence
+            # réglées dans l'appli. Le reste du cycle continue (caches, messages,
+            # files d'attente, statistiques) et la santé signale l'état normal.
+            en_silence = silence_actif()
+            if en_silence != silence_precedent:
+                print(
+                    "Heures de silence : les réponses automatiques sont suspendues "
+                    "jusqu'à la fin de la plage (caches et envois en file continuent)."
+                    if en_silence
+                    else "Fin des heures de silence : les réponses automatiques reprennent.",
+                    flush=True,
+                )
+                silence_precedent = en_silence
+            envoyees, humain = ([], []) if en_silence else passe(cfg, state, posts)
             total_reponses += len(envoyees)
             print(f"-> {len(envoyees)} réponse(s) envoyée(s), {len(humain)} à traiter par un humain, {len(gm.erreurs)} erreur(s) à retenter.", flush=True)
             if envoyees or humain:
