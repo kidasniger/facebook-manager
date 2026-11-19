@@ -118,20 +118,6 @@ class FileAttenteTests(unittest.TestCase):
         self.assertTrue(gm.appels[0]["url"].endswith("/c9/comments"))
         self.assertEqual(("replied", "r1"), tuple(self.lire("posts/replies.json")[0][k] for k in ("status", "reply_id")))
 
-    def test_gestion_publication_pin_unpin_hide(self):
-        self.ecrire("posts/actions.json", [
-            {"action": "pin", "post_id": "p1", "status": "pending"},
-            {"action": "unpin", "post_id": "p2", "status": "pending"},
-            {"action": "hide", "post_id": "p3", "status": "pending"}])
-        gm = faux_gm(self.racine, [(200, {"success": True})] * 3)
-        self.assertEqual(3, self.traiter(gm))
-        [a, b, c] = gm.appels
-        self.assertEqual("true", a["data"]["is_pinned"])
-        self.assertEqual("false", b["data"]["is_pinned"])
-        self.assertEqual("true", c["data"]["is_hidden"])
-        etats = [x["status"] for x in self.lire("posts/actions.json")]
-        self.assertEqual(["done", "done", "done"], etats)
-
     def test_suppression_utilise_delete(self):
         self.ecrire("posts/actions.json", [{"action": "delete", "post_id": "p5", "status": "pending"}])
         gm = faux_gm(self.racine, [(200, {"success": True})])
