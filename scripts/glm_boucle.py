@@ -228,8 +228,20 @@ class MessagesApp:
                 self.modifie = False
             self.dernier_push = time.time()
 
+def configuration_effective(cfg, auto_reponses=None):
+    """Applique le verrou GitHub AUTO_REPONSES sans désactiver les autres tâches du bot."""
+    resultat = dict(cfg) if isinstance(cfg, dict) else {}
+    verrou = str(auto_reponses if auto_reponses is not None else os.environ.get("AUTO_REPONSES", "on")).strip().lower()
+    if verrou == "off":
+        reponses = resultat.get("reponses")
+        reponses = dict(reponses) if isinstance(reponses, dict) else {}
+        reponses["actif"] = False
+        resultat["reponses"] = reponses
+    return resultat
+
+
 def main():
-    cfg = gm.jload(gm.P("glm", "config.json"), {})
+    cfg = configuration_effective(gm.jload(gm.P("glm", "config.json"), {}))
     if not cfg.get("actif", True):
         print('GLM désactivé (glm/config.json, "actif": false).'); sortie_github("relance", "non"); return 0
     if not (gm.PAGE_ID and gm.TOKEN):
