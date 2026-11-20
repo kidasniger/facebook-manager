@@ -1,10 +1,8 @@
-name: GLM Live (réponses automatiques)
-
-# Actif par défaut ; définir GLM_LIVE=off pour désactiver.
-# Une session dure 330 minutes puis déclenche la suivante.
-# Chef d'orchestre unique : lecture des commentaires, réponses, files d'attente de l'app, statistiques.
+name: Facebook Manager — Bot central
 
 on:
+  schedule:
+    - cron: "*/5 * * * *"
   push:
     branches: [main]
     paths:
@@ -15,8 +13,9 @@ on:
       - "scripts/lecture_messages.py"
       - "scripts/file_attente.py"
       - "scripts/taches_periodiques.py"
+      - "scripts/aimes_auto.py"
+      - "scripts/sante.py"
       - ".github/workflows/glm-live.yml"
-      - ".github/workflows/glm-veille.yml"
   workflow_dispatch:
     inputs:
       dry_run:
@@ -32,30 +31,45 @@ permissions:
   contents: read
   actions: write
 
-concurrency:
-  group: facebook-comment-processing
-  cancel-in-progress: true
-
 jobs:
-  veille:
-    if: vars.GLM_LIVE != 'off'
+  watchdog:
+    if: github.event_name == 'schedule' && vars.GLM_LIVE != 'off'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Vérifier si le bot central tourne déjà
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          actifs=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow glm-live.yml --branch main --limit 50 --json status,event --jq '[.[] | select(.event != "schedule" and (.status == "in_progress" or .status == "queued" or .status == "waiting" or .status == "pending" or .status == "requested"))] | length')
+          echo "Sessions bot actives ou en attente : $actifs"
+          if [ "$actifs" -eq 0 ]; then
+            echo "Aucune session active : démarrage du bot central."
+            gh workflow run glm-live.yml --repo "$GITHUB_REPOSITORY" --ref main -f dry_run=false -f minutes=330
+          else
+            echo "Le bot central est déjà actif."
+          fi
+
+  bot:
+    if: github.event_name != 'schedule' && vars.GLM_LIVE != 'off'
+    concurrency:
+      group: facebook-comment-processing
+      cancel-in-progress: false
     runs-on: ubuntu-latest
     timeout-minutes: 350
     env:
       DRY_RUN: ${{ github.event.inputs.dry_run == 'true' && '1' || '0' }}
       DUREE_MINUTES: ${{ github.event.inputs.minutes || '330' }}
       INTERVALLE_SECONDS: "60"
-      # Balayage complet (filet de sécurité) et statistiques espacées : voir scripts/glm_boucle.py
       BALAYAGE_MINUTES: ${{ vars.BALAYAGE_MINUTES || '20' }}
       STATS_HEURES: ${{ vars.STATS_HEURES || '6' }}
-      # Messenger : intervalle (secondes) entre deux listes de conversations.
       MESSAGES_SECONDES: ${{ vars.MESSAGES_SECONDES || '120' }}
-      # glm (défaut) : cette boucle exécute les files d'attente de l'app.
-      # workflows : retour à l'ancien fonctionnement (dispatcher + publier*.yml).
       FILE_ATTENTE: ${{ vars.FILE_ATTENTE || 'glm' }}
+      AUTO_REPONSES: ${{ vars.AUTO_REPONSES || 'on' }}
     steps:
       - uses: actions/checkout@v4
-      - name: Récupérer les données (dépôt privé)
+      - name: Récupérer les données privées
         uses: actions/checkout@v4
         with:
           repository: kidasniger/facebook-data
@@ -63,7 +77,7 @@ jobs:
           path: data
       - name: Vérifier Python
         run: python3 --version
-      - name: Veiller sur les commentaires
+      - name: Exécuter le bot central
         id: boucle
         env:
           FB_PAGE_TOKEN: ${{ secrets.FB_PAGE_TOKEN }}
@@ -76,4 +90,4 @@ jobs:
         if: steps.boucle.outcome == 'success' && steps.boucle.outputs.relance != 'non' && env.DRY_RUN != '1' && vars.GLM_LIVE != 'off'
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh workflow run glm-live.yml --ref main -f dry_run=false -f minutes=330
+        run: gh workflow run glm-live.yml --repo "$GITHUB_REPOSITORY" --ref main -f dry_run=false -f minutes=330
