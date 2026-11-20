@@ -72,6 +72,12 @@ def traiter(gm, sauver, dry=False):
         if dry:
             gm.log(f"[TEST] aimes : la publication {pid} serait aimée.")
             continue
+        essais_precedents = int((deja or {}).get("essais") or 0)
+        faits[pid] = {"le": _maintenant(), "like": "pending", "essais": essais_precedents}
+        gm.jsave(gm.P(*MEMOIRE), {"faits": _compacte(faits)})
+        if not sauver("Aimes : prise en charge", ["glm/aimes.json"]):
+            gm.log(f"Aimes {pid} : enregistrement préalable impossible, like annulé.")
+            return compteur
         st, res = gm.http(f"{gm.GRAPH}/{pid}/likes", {"access_token": gm.TOKEN})
         ok = st == 200 and isinstance(res, dict) and \
             (res.get("success") is True or res.get("id"))
@@ -79,7 +85,7 @@ def traiter(gm, sauver, dry=False):
         if isinstance(res, dict) and \
                 "already" in str((res.get("error") or {}).get("message", "")).lower():
             ok, note = True, "déjà aimée"
-        essais = int((deja or {}).get("essais") or 0) + 1
+        essais = essais_precedents + 1
         entree = {"le": _maintenant(),
                   "like": "ok" if ok else "erreur",
                   "essais": essais}
