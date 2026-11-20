@@ -90,7 +90,7 @@ class AimesAutoTests(unittest.TestCase):
         self.assertIn("access_token=tok", gm.appels[0]["url"])
         urls = [a["url"] for a in gm.appels]
         self.assertIn("p2/likes", urls[1])    # les plus anciennes d'abord
-        self.assertIn("p1/likes", urls[2])
+        self.assertIn("p1/likes", urls[3])
         self.assertEqual(self.memo()["faits"]["p1"]["like"], "ok")
         # cycle suivant : rien de nouveau à aimer (l'appel feed est légitime)
         gm2 = faux_gm(self.racine, [(200, feed)])
