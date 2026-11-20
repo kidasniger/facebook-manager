@@ -508,7 +508,7 @@ def gerer_reponses(cfg, state, posts):
         "dans ce cas rédige une réponse prudente et bienveillante ; le commentaire reçoit toujours une réponse.\n"
         f"La réponse : {phrase_longueur(longueur)}, même langue que le commentaire, {phrase_ton(ton)}, sans lien, "
         "sans hashtag, sans mention @, sans numéro, sans promesse, sans rien qui suggère une IA. "
-        "Ne recopie pas le commentaire. repondre doit toujours être true et urgence toujours false.\n"
+        "Ne recopie pas le commentaire. repondre doit toujours être true ; urgence doit respecter strictement les critères de danger définis plus haut.\n"
         "Varie tes formulations : ne commence jamais deux réponses de la même façon. "
         "Si tu connais le prénom de la personne, utilise-le naturellement (sans exagérer).\n"
         + FAITS + " " + FAITS_FICHIER
@@ -520,81 +520,80 @@ def gerer_reponses(cfg, state, posts):
         reverse=True,
     )
     for post, c in paires:
-        if True:
-            verdict, raison = pre_filtre(c, post["id"], state, cr)
-            texte = (c.get("message") or "").strip()
-            if verdict == "ignorer":
-                continue
-            if verdict == "humain":
-                humain.append({"comment_id": c["id"], "post_id": post["id"], "texte": texte[:300], "raison": raison,
-                               "date": NOW.strftime("%Y-%m-%dT%H:%M:%SZ")})
-                continue
-            # Mots interdits réglés dans l'appli (glm/config.json, clé « moderation ») :
-            # pas de réponse automatique, le commentaire attend un humain dans À traiter.
-            bloque = mot_interdit(texte, cfg)
-            if bloque:
-                humain.append({"comment_id": c["id"], "post_id": post["id"], "texte": texte[:300],
-                               "raison": f"mot interdit réglé dans l'appli ({bloque})",
-                               "date": NOW.strftime("%Y-%m-%dT%H:%M:%SZ")})
-                log(f"Réponse suspendue : mot interdit dans le commentaire {c.get('id')} ({bloque}).")
-                continue
-            textes = {str(x.get("id")): (x.get("message") or "") for x in (post.get("comments") or {}).get("data") or []}
-            parent = textes.get(str(c.get("parent_id") or ""), "")
-            prenom = str((c.get("from") or {}).get("name") or "").split(" ")[0]
-            user = (f"Post :\n{(post.get('message') or '')[:600]}\n\n"
-                    + (f"Commentaire parent (le fil auquel la personne répond) :\n{parent[:300]}\n\n" if parent else "")
-                    + (f"Prénom de la personne : {prenom}\n\n" if prenom else "")
-                    + f"Commentaire :\n{texte or '[Commentaire sans texte : répondre par un message bref et adapté.]'}")
-            try:
-                data = extract_json(glm(cfg, system, user, 0.4, 400)) or {}
-            except Exception as e:
-                detail = f"GLM : échec pour le commentaire {c.get('id')} ({type(e).__name__}) : {str(e)[:300]}"
-                erreurs.append(detail)
-                log(detail + " — nouvelle tentative au prochain cycle.")
-                continue
-            if not isinstance(data, dict) or not isinstance(data.get("reponse"), str):
-                detail = f"GLM : réponse JSON invalide ou champ 'reponse' absent pour le commentaire {c.get('id')}."
-                erreurs.append(detail)
-                log(detail + " — nouvelle tentative au prochain cycle.")
-                continue
-            rep = data["reponse"].strip()
-            if valider_reponse(rep):
-                rep = random.choice(["Merci pour ton commentaire ! 🙏", "Merci, ça fait plaisir de te lire !", "Merci d'être passé par ici 🙌", "Content que ça te parle, merci !"])
-            if DRY:
-                log(f"Réponses (test) : « {comment_store.apercu(texte)} » -> « {comment_store.apercu(rep, 280)} »")
-                continue
-            # Toujours répondre sur le commentaire racine (2 niveaux max) : une réponse posée
-            # sous une réponse est invisible dans Facebook Lite.
-            target = comment_store.reply_target(c)
-            if comment_store.is_nested(c):
-                rep = comment_store.with_name(rep, prenom)
-            st, res = fb_reply(target, rep)
-            if st == 200 and res.get("id"):
-                delivery = res.get("_delivery", "unverified")
-                entry = {
-                    "comment_id": str(c["id"]), "parent_id": str(c.get("parent_id") or post["id"]),
-                    "thread_id": str(target),
-                    "reply_id": str(res["id"]), "message": rep, "delivery": delivery,
-                    "date": NOW.strftime("%Y-%m-%dT%H:%M:%SZ"),
-                }
-                replies = jload(P("posts", "replies.json"), [])
-                replies.append({**entry, "status": "replied" if delivery == "visible" else "pending_verification", "auteur": "glm"})
-                jsave(P("posts", "replies.json"), replies)
-                if delivery == "visible":
-                    state["reponses"].append({"comment_id": c["id"], "reply_id": res["id"], "delivery": delivery, "date": entry["date"]})
-                    comment_store.record(state.setdefault("comment_ledger", []), c["id"], "replied", reply_id=res["id"], delivery=delivery, date=entry["date"], source="glm-live")
-                    comment_store.save_ledger(state["comment_ledger"], P("inbox", "commentaires-traites.json"))
-                    envoyees.append((texte, rep))
-                    log(f"Réponse vérifiée dans le fil : publication={post['id']} parent={entry['parent_id']} cible={entry['comment_id']} réponse={entry['reply_id']}")
-                else:
-                    state.setdefault("pending_verification", []).append(entry)
-                    log(f"ALERTE : Facebook a accepté la réponse, mais elle n'est PAS confirmée dans le fil. parent={entry['parent_id']} cible={entry['comment_id']} réponse={entry['reply_id']} statut={delivery}. Aucun succès déclaré.")
-                jsave(P("glm", "etat.json"), state)
+        verdict, raison = pre_filtre(c, post["id"], state, cr)
+        texte = (c.get("message") or "").strip()
+        if verdict == "ignorer":
+            continue
+        if verdict == "humain":
+            humain.append({"comment_id": c["id"], "post_id": post["id"], "texte": texte[:300], "raison": raison,
+                           "date": NOW.strftime("%Y-%m-%dT%H:%M:%SZ")})
+            continue
+        # Mots interdits réglés dans l'appli (glm/config.json, clé « moderation ») :
+        # pas de réponse automatique, le commentaire attend un humain dans À traiter.
+        bloque = mot_interdit(texte, cfg)
+        if bloque:
+            humain.append({"comment_id": c["id"], "post_id": post["id"], "texte": texte[:300],
+                           "raison": f"mot interdit réglé dans l'appli ({bloque})",
+                           "date": NOW.strftime("%Y-%m-%dT%H:%M:%SZ")})
+            log(f"Réponse suspendue : mot interdit dans le commentaire {c.get('id')} ({bloque}).")
+            continue
+        textes = {str(x.get("id")): (x.get("message") or "") for x in (post.get("comments") or {}).get("data") or []}
+        parent = textes.get(str(c.get("parent_id") or ""), "")
+        prenom = str((c.get("from") or {}).get("name") or "").split(" ")[0]
+        user = (f"Post :\n{(post.get('message') or '')[:600]}\n\n"
+                + (f"Commentaire parent (le fil auquel la personne répond) :\n{parent[:300]}\n\n" if parent else "")
+                + (f"Prénom de la personne : {prenom}\n\n" if prenom else "")
+                + f"Commentaire :\n{texte or '[Commentaire sans texte : répondre par un message bref et adapté.]'}")
+        try:
+            data = extract_json(glm(cfg, system, user, 0.4, 400)) or {}
+        except Exception as e:
+            detail = f"GLM : échec pour le commentaire {c.get('id')} ({type(e).__name__}) : {str(e)[:300]}"
+            erreurs.append(detail)
+            log(detail + " — nouvelle tentative au prochain cycle.")
+            continue
+        if not isinstance(data, dict) or not isinstance(data.get("reponse"), str):
+            detail = f"GLM : réponse JSON invalide ou champ 'reponse' absent pour le commentaire {c.get('id')}."
+            erreurs.append(detail)
+            log(detail + " — nouvelle tentative au prochain cycle.")
+            continue
+        rep = data["reponse"].strip()
+        if valider_reponse(rep):
+            rep = random.choice(["Merci pour ton commentaire ! 🙏", "Merci, ça fait plaisir de te lire !", "Merci d'être passé par ici 🙌", "Content que ça te parle, merci !"])
+        if DRY:
+            log(f"Réponses (test) : « {comment_store.apercu(texte)} » -> « {comment_store.apercu(rep, 280)} »")
+            continue
+        # Toujours répondre sur le commentaire racine (2 niveaux max) : une réponse posée
+        # sous une réponse est invisible dans Facebook Lite.
+        target = comment_store.reply_target(c)
+        if comment_store.is_nested(c):
+            rep = comment_store.with_name(rep, prenom)
+        st, res = fb_reply(target, rep)
+        if st == 200 and res.get("id"):
+            delivery = res.get("_delivery", "unverified")
+            entry = {
+                "comment_id": str(c["id"]), "parent_id": str(c.get("parent_id") or post["id"]),
+                "thread_id": str(target),
+                "reply_id": str(res["id"]), "message": rep, "delivery": delivery,
+                "date": NOW.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            }
+            replies = jload(P("posts", "replies.json"), [])
+            replies.append({**entry, "status": "replied" if delivery == "visible" else "pending_verification", "auteur": "glm"})
+            jsave(P("posts", "replies.json"), replies)
+            if delivery == "visible":
+                state["reponses"].append({"comment_id": c["id"], "reply_id": res["id"], "delivery": delivery, "date": entry["date"]})
+                comment_store.record(state.setdefault("comment_ledger", []), c["id"], "replied", reply_id=res["id"], delivery=delivery, date=entry["date"], source="glm-live")
+                comment_store.save_ledger(state["comment_ledger"], P("inbox", "commentaires-traites.json"))
+                envoyees.append((texte, rep))
+                log(f"Réponse vérifiée dans le fil : publication={post['id']} parent={entry['parent_id']} cible={entry['comment_id']} réponse={entry['reply_id']}")
             else:
-                fb_error = (res.get("error") or {}) if isinstance(res, dict) else {}
-                detail = (fb_error.get("message") or res.get("erreur") or str(res))[:300] if isinstance(res, dict) else str(res)[:300]
-                erreurs.append(f"Facebook : échec de publication pour le commentaire {c.get('id')} (HTTP {st}, code {fb_error.get('code')}, sous-code {fb_error.get('error_subcode')}) : {detail}")
-                log(erreurs[-1] + " — commentaire non marqué comme traité, nouvelle tentative au prochain cycle.")
+                state.setdefault("pending_verification", []).append(entry)
+                log(f"ALERTE : Facebook a accepté la réponse, mais elle n'est PAS confirmée dans le fil. parent={entry['parent_id']} cible={entry['comment_id']} réponse={entry['reply_id']} statut={delivery}. Aucun succès déclaré.")
+            jsave(P("glm", "etat.json"), state)
+        else:
+            fb_error = (res.get("error") or {}) if isinstance(res, dict) else {}
+            detail = (fb_error.get("message") or res.get("erreur") or str(res))[:300] if isinstance(res, dict) else str(res)[:300]
+            erreurs.append(f"Facebook : échec de publication pour le commentaire {c.get('id')} (HTTP {st}, code {fb_error.get('code')}, sous-code {fb_error.get('error_subcode')}) : {detail}")
+            log(erreurs[-1] + " — commentaire non marqué comme traité, nouvelle tentative au prochain cycle.")
     return envoyees, humain
 
 
