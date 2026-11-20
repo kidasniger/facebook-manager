@@ -14,6 +14,7 @@ Réglé par glm/config.json, bloc « aimes » :
 Un like en erreur est retenté au plus ESSAIS_MAX cycles avant abandon.
 """
 import datetime as dt
+import urllib.parse
 
 import file_attente
 
@@ -49,9 +50,12 @@ def traiter(gm, sauver, dry=False):
     if not isinstance(cfg, dict) or not cfg.get("actif"):
         return 0
     message = str(cfg.get("message") or "").strip()
-    st, res = gm.http(f"{gm.GRAPH}/{gm.PAGE_ID}/feed", {
+    # Lecture du fil = GET. Passer les paramètres dans le corps ferait
+    # interpréter l'appel comme une création de publication vide (erreur 197).
+    params = urllib.parse.urlencode({
         "fields": "id,from,created_time", "limit": "25", "access_token": gm.TOKEN,
     })
+    st, res = gm.http(f"{gm.GRAPH}/{gm.PAGE_ID}/feed?{params}", method="GET")
     if st != 200 or not isinstance(res, dict) or res.get("error"):
         gm.log(f"Aimes : lecture du fil impossible ({_erreur(res)})")
         return 0
