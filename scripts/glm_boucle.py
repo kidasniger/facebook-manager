@@ -7,7 +7,6 @@ Chef d'orchestre unique : c'est la seule tâche qui lit Facebook en continu.
 - écrit inbox/commentaires.json pour l'app (remplace « Surveiller la Page ») ;
 - exécute les files d'attente de l'app (publier, programmer, répondre, modifier/supprimer) ;
 - met à jour inbox/statistiques.json toutes les STATS_HEURES heures.
-FILE_ATTENTE=workflows rend les files d'attente aux anciens workflows (retour arrière).
 """
 import datetime as dt
 import os
