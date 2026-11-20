@@ -22,7 +22,6 @@ Les tâches de maintenance (archive, apprentissage, assistant et audit) ainsi qu
 
 - `GLM_LIVE=off` : arrête le bot et empêche le watchdog de le relancer.
 - Le réglage « Réponses automatiques » est lu depuis `glm/config.json` et rechargé à chaque cycle.
-- `FILE_ATTENTE=glm` : fait traiter les files d'attente par le bot central (valeur recommandée).
 - `BALAYAGE_MINUTES` : intervalle du balayage complet (20 par défaut).
 - `MESSAGES_SECONDES` : intervalle de lecture Messenger (120 par défaut).
 - `STATS_HEURES` : intervalle des statistiques (6 par défaut).
