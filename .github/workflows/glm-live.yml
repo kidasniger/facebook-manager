@@ -65,7 +65,6 @@ jobs:
       BALAYAGE_MINUTES: ${{ vars.BALAYAGE_MINUTES || '20' }}
       STATS_HEURES: ${{ vars.STATS_HEURES || '6' }}
       MESSAGES_SECONDES: ${{ vars.MESSAGES_SECONDES || '120' }}
-      FILE_ATTENTE: ${{ vars.FILE_ATTENTE || 'glm' }}
     steps:
       - uses: actions/checkout@v4
       - name: Récupérer les données privées
