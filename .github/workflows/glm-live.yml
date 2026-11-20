@@ -55,7 +55,8 @@ jobs:
     if: github.event_name != 'schedule' && vars.GLM_LIVE != 'off'
     concurrency:
       group: facebook-comment-processing
-      cancel-in-progress: false
+      # Une nouvelle exécution remplace proprement toute session bloquée.
+      cancel-in-progress: true
     runs-on: ubuntu-latest
     timeout-minutes: 350
     env:
