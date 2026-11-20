@@ -323,6 +323,8 @@ def main():
                 if traites: print(f"-> {traites} élément(s) de la file d'attente traité(s).", flush=True)
                 aimes = aimes_auto.traiter(gm, enregistrer, dry=DRY)
                 if aimes: print(f"-> {aimes} publication(s) aimée(s) automatiquement.", flush=True)
+            # Le compteur doit inclure les réponses de CE cycle avant d'écrire le rapport.
+            session_sante["reponses"] = total_reponses
             sante.maj(gm, session=session_sante, echecs=echecs)
             # Publier immédiatement l'état de santé après une réponse confirmée,
             # une mise en attente humaine ou une erreur : l'application le relit
