@@ -324,7 +324,10 @@ def main():
                 aimes = aimes_auto.traiter(gm, enregistrer, dry=DRY)
                 if aimes: print(f"-> {aimes} publication(s) aimée(s) automatiquement.", flush=True)
             sante.maj(gm, session=session_sante, echecs=echecs)
-            sante.pousser(gm, enregistrer)
+            # Publier immédiatement l'état de santé après une réponse confirmée,
+            # une mise en attente humaine ou une erreur : l'application le relit
+            # au prochain cycle de synchronisation, sans attendre 20 minutes.
+            sante.pousser(gm, enregistrer, force=bool(envoyees or humain or gm.erreurs))
             if time.time() - derniere_stats >= STATS_HEURES * 3600 and gm.USAGE["pct"] < 75:
                 if not DRY:
                     lus, voulus = taches_periodiques.ecrire_statistiques(gm)
