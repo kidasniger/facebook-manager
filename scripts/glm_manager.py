@@ -394,9 +394,21 @@ def pre_filtre(c, post_id, state, cfg_r):
     if any(str(item.get("comment_id")) == cid for item in state.get("pending_verification", [])):
         return "ignorer", "publication acceptée par Facebook, vérification du fil en attente"
     # Les anciens statuts "human" ne sont pas des traitements : ils doivent être repris.
-    if any(str(item.get("comment_id")) == cid and item.get("status") in {"replied", "repondu"}
-           for item in state.get("comment_ledger", [])):
-        return "ignorer", "déjà répondu dans l'historique partagé"
+    for item in state.get("comment_ledger", []):
+        if str(item.get("comment_id")) != cid:
+            continue
+        if item.get("status") in {"replied", "repondu"}:
+            return "ignorer", "déjà répondu dans l'historique partagé"
+        if item.get("status") == "processing":
+            try:
+                started = dt.datetime.fromisoformat(str(item.get("date") or "").replace("Z", "+00:00"))
+                if started.tzinfo is None:
+                    started = started.replace(tzinfo=dt.timezone.utc)
+                age = (NOW - started).total_seconds()
+            except (TypeError, ValueError):
+                return "ignorer", "prise en charge existante à vérifier manuellement"
+            if age < 900:
+                return "ignorer", "prise en charge en cours, attente avant nouvelle tentative"
     # Ne jamais répondre à ses propres réponses : cela créerait une boucle infinie.
     if str((c.get("from") or {}).get("id") or "") == str(PAGE_ID):
         return "ignorer", "commentaire publié par la Page"
@@ -458,7 +470,7 @@ def mot_interdit(texte, cfg):
     return None
 
 
-def gerer_reponses(cfg, state, posts):
+def gerer_reponses(cfg, state, posts, sauver=None):
     cr = cfg.get("reponses", {})
     if not cr.get("actif", True):
         log("Réponses : désactivées dans glm/config.json")
@@ -567,6 +579,20 @@ def gerer_reponses(cfg, state, posts):
         target = comment_store.reply_target(c)
         if comment_store.is_nested(c):
             rep = comment_store.with_name(rep, prenom)
+        # Claim durable avant l'appel Facebook : une interruption ne doit pas provoquer
+        # une seconde publication du même commentaire au redémarrage.
+        date_claim = NOW.strftime("%Y-%m-%dT%H:%M:%SZ")
+        comment_store.record(
+            state.setdefault("comment_ledger", []), c["id"], "processing",
+            date=date_claim, source="glm-live",
+        )
+        comment_store.save_ledger(state["comment_ledger"], P("inbox", "commentaires-traites.json"))
+        jsave(P("glm", "etat.json"), state)
+        if sauver and not sauver("GLM : prise en charge commentaire", [
+            "glm/etat.json", "inbox/commentaires-traites.json"
+        ]):
+            log(f"Réponse annulée : prise en charge non enregistrée pour {c.get('id')}.")
+            continue
         st, res = fb_reply(target, rep)
         if st == 200 and res.get("id"):
             delivery = res.get("_delivery", "unverified")
@@ -592,6 +618,16 @@ def gerer_reponses(cfg, state, posts):
         else:
             fb_error = (res.get("error") or {}) if isinstance(res, dict) else {}
             detail = (fb_error.get("message") or res.get("erreur") or str(res))[:300] if isinstance(res, dict) else str(res)[:300]
+            comment_store.record(
+                state.setdefault("comment_ledger", []), c["id"], "error",
+                date=NOW.strftime("%Y-%m-%dT%H:%M:%SZ"), reason=detail, source="glm-live",
+            )
+            comment_store.save_ledger(state["comment_ledger"], P("inbox", "commentaires-traites.json"))
+            jsave(P("glm", "etat.json"), state)
+            if sauver:
+                sauver("GLM : échec réponse commentaire", [
+                    "glm/etat.json", "inbox/commentaires-traites.json"
+                ])
             erreurs.append(f"Facebook : échec de publication pour le commentaire {c.get('id')} (HTTP {st}, code {fb_error.get('code')}, sous-code {fb_error.get('error_subcode')}) : {detail}")
             log(erreurs[-1] + " — commentaire non marqué comme traité, nouvelle tentative au prochain cycle.")
     return envoyees, humain
