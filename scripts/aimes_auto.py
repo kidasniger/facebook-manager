@@ -34,6 +34,18 @@ def _erreur(res):
     return str(res)[:160]
 
 
+def _verifier_like(gm, pid):
+    """Vérifie côté Graph API que la Page a réellement aimé la publication."""
+    params = urllib.parse.urlencode({"summary": "true", "access_token": gm.TOKEN})
+    st, res = gm.http(f"{gm.GRAPH}/{pid}/likes?{params}", method="GET")
+    if st != 200 or not isinstance(res, dict) or res.get("error"):
+        return None, _erreur(res)
+    summary = res.get("summary")
+    if not isinstance(summary, dict) or "has_liked" not in summary:
+        return None, "Facebook n'a pas renvoyé summary.has_liked"
+    return bool(summary["has_liked"]), ""
+
+
 def _compacte(faits, garde=300):
     """Mémoire bornée : on garde les entrées les plus récentes."""
     if len(faits) <= garde:
@@ -70,9 +82,24 @@ def traiter(gm, sauver, dry=False):
             break                        # plafond par cycle : pas de rafale
         pid = p["id"]
         deja = faits.get(pid)
-        if isinstance(deja, dict):
-            if deja.get("like") in ("ok", "deja") or deja.get("essais", 0) >= ESSAIS_MAX:
-                continue                 # terminé ou abandonné après essais
+        if isinstance(deja, dict) and deja.get("like") in ("ok", "deja"):
+            if deja.get("verifie"):
+                continue
+            # Les anciennes entrées « ok » n'étaient pas vérifiées côté Facebook.
+            verifie, detail = _verifier_like(gm, pid)
+            if verifie is True:
+                deja["verifie"] = True
+                faits[pid] = deja
+                gm.jsave(gm.P(*MEMOIRE), {"faits": _compacte(faits)})
+                sauver("Aimes : confirmation Facebook", ["glm/aimes.json"])
+                continue
+            if verifie is None:
+                gm.log(f"Aimes {pid} : vérification impossible ({detail}); aucun succès affirmé.")
+                continue
+            deja["like"] = "a_verifier"
+            faits[pid] = deja
+        if isinstance(deja, dict) and deja.get("essais", 0) >= ESSAIS_MAX:
+            continue
         if dry:
             gm.log(f"[TEST] aimes : la publication {pid} serait aimée.")
             continue
@@ -83,20 +110,29 @@ def traiter(gm, sauver, dry=False):
             gm.log(f"Aimes {pid} : enregistrement préalable impossible, like annulé.")
             return compteur
         st, res = gm.http(f"{gm.GRAPH}/{pid}/likes", {"access_token": gm.TOKEN})
-        ok = st == 200 and isinstance(res, dict) and \
+        post_ok = st == 200 and isinstance(res, dict) and \
             (res.get("success") is True or res.get("id"))
         note = ""
         if isinstance(res, dict) and \
                 "already" in str((res.get("error") or {}).get("message", "")).lower():
-            ok, note = True, "déjà aimée"
+            post_ok, note = True, "déjà aimée selon la réponse API"
+        verifie, detail = (False, "")
+        if post_ok:
+            verifie, detail = _verifier_like(gm, pid)
+        ok = post_ok and verifie is True
         essais = essais_precedents + 1
         entree = {"le": _maintenant(),
                   "like": "ok" if ok else "erreur",
                   "essais": essais}
+        if ok:
+            entree["verifie"] = True
         if note:
             entree["note"] = note
         if not ok:
-            entree["derniere_erreur"] = _erreur(res)
+            entree["derniere_erreur"] = (
+                f"POST: {_erreur(res)}; vérification: {detail or 'has_liked=false'}"
+                if post_ok else _erreur(res)
+            )
         compteur += 1
         # message privé facultatif à l'auteur (jamais à la Page elle-même)
         if ok and message:
@@ -121,5 +157,6 @@ def traiter(gm, sauver, dry=False):
         gm.jsave(gm.P(*MEMOIRE), {"faits": _compacte(faits)})
         sauver("Aimes : publication traitée", ["glm/aimes.json"])
         gm.log(f"Aimes {pid} : like {entree['like']}"
+               + (", confirmé par Facebook" if ok else f", non confirmé ({entree.get('derniere_erreur', 'vérification échouée')})")
                + (f", MP {entree.get('message')}" if message else ""))
     return compteur
