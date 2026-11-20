@@ -54,8 +54,7 @@ jobs:
   bot:
     if: github.event_name != 'schedule' && vars.GLM_LIVE != 'off'
     concurrency:
-      group: facebook-comment-processing
-      # Une nouvelle exécution remplace proprement toute session bloquée.
+      group: facebook-comment-processing-v2
       cancel-in-progress: true
     runs-on: ubuntu-latest
     timeout-minutes: 350
@@ -68,6 +67,17 @@ jobs:
       MESSAGES_SECONDES: ${{ vars.MESSAGES_SECONDES || '120' }}
     steps:
       - uses: actions/checkout@v4
+      - name: Arrêter les anciennes sessions du bot
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          anciens=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow glm-live.yml --branch main --limit 100 --json databaseId,status,event --jq ".[] | select(.event != \"schedule\" and .databaseId != $GITHUB_RUN_ID and (.status == \"in_progress\" or .status == \"queued\" or .status == \"waiting\" or .status == \"pending\" or .status == \"requested\")) | .databaseId")
+          while IFS= read -r id; do
+            [ -z "$id" ] && continue
+            echo "Arrêt de l'ancienne session $id"
+            gh run cancel "$id" --repo "$GITHUB_REPOSITORY" || true
+          done <<< "$anciens"
       - name: Récupérer les données privées
         uses: actions/checkout@v4
         with:
