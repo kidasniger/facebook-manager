@@ -42,7 +42,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          actifs=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow glm-live.yml --branch main --limit 50 --json status,event --jq '[.[] | select(.event != "schedule" and (.status == "in_progress" or .status == "queued" or .status == "waiting" or .status == "pending" or .status == "requested"))] | length')
+          actifs=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow glm-live.yml --branch main --limit 100 --json status,event --jq '[.[] | select(.event != "schedule" and (.status == "in_progress" or .status == "queued" or .status == "waiting" or .status == "pending" or .status == "requested"))] | length')
           echo "Sessions bot actives ou en attente : $actifs"
           if [ "$actifs" -eq 0 ]; then
             echo "Aucune session active : démarrage du bot central."
