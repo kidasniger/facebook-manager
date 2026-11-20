@@ -21,6 +21,6 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          for w in glm-veille.yml dispatcher.yml apprendre.yml archive-mensuelle.yml keepalive.yml; do
+          for w in glm-live.yml apprendre.yml archive-mensuelle.yml keepalive.yml; do
             gh api -X PUT "repos/$GITHUB_REPOSITORY/actions/workflows/$w/enable" >/dev/null 2>&1 && echo "ok : $w" || echo "ignoré : $w"
           done

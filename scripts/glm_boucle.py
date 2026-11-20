@@ -31,7 +31,7 @@ PAGE_INFO_SECONDES = 600
 # Messenger : un appel de liste toutes les MESSAGES_SECONDES (doublé si quota >= 50 %, suspendu >= 75 %).
 MESSAGES_SECONDES = max(30, int(os.environ.get("MESSAGES_SECONDES") or 120))
 PUSH_MESSAGES_SECONDES = 120
-FILE_ATTENTE_ACTIVE = (os.environ.get("FILE_ATTENTE") or "glm") != "workflows"
+FILE_ATTENTE_ACTIVE = True
 DRY = gm.DRY
 DEBUT = time.time()
 CODES_JETON = {102, 190, 463, 467}
@@ -114,7 +114,7 @@ def silence_actif(now=None):
 def passe(cfg, state, posts):
     gm.journal.clear(); gm.erreurs.clear()
     gm.NOW = dt.datetime.now(dt.timezone.utc)
-    envoyees, humain = gm.gerer_reponses(cfg, state, posts)
+    envoyees, humain = gm.gerer_reponses(cfg, state, posts, sauver=enregistrer)
     if humain and not DRY:
         state["a_traiter"] = (state["a_traiter"] + humain)[-100:]
         gm.jsave(gm.P("inbox", "a_traiter.json"), state["a_traiter"])
@@ -256,6 +256,11 @@ def main():
     echecs = 0; total_reponses = 0; cycles = 0; silence_precedent = None
     while time.time() - DEBUT < DUREE:
         try:
+            # Synchroniser les réglages modifiés depuis l'application avant le cycle.
+            if FILE_ATTENTE_ACTIVE:
+                if not synchroniser():
+                    print("Avertissement : synchronisation du dépôt de données impossible.", flush=True)
+                cfg = gm.jload(gm.P("glm", "config.json"), cfg)
             cycles += 1
             session_sante["cycles"] = cycles
             session_sante["reponses"] = total_reponses
@@ -315,7 +320,6 @@ def main():
             except Exception as exc:  # Messenger ne doit jamais bloquer les commentaires ni les files d'attente
                 print(f"Messenger : erreur inattendue ({type(exc).__name__}), ignorée.", flush=True)
             if FILE_ATTENTE_ACTIVE:
-                if not synchroniser(): print("Avertissement : synchronisation du dépôt de données impossible.", flush=True)
                 traites = file_attente.traiter(gm, enregistrer, dry=DRY)
                 if traites: print(f"-> {traites} élément(s) de la file d'attente traité(s).", flush=True)
                 aimes = aimes_auto.traiter(gm, enregistrer, dry=DRY)

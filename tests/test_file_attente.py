@@ -134,6 +134,16 @@ class FileAttenteTests(unittest.TestCase):
         self.assertEqual(0, self.traiter(gm2, dry=True))   # mode test : rien n'est envoyé
         self.assertEqual([], gm2.appels)
 
+    def test_echec_persistance_claim_annule_action_facebook(self):
+        self.ecrire("posts/queue.json", [{"message": "Ne pas publier", "status": "pending"}])
+        gm = faux_gm(self.racine, [])
+        nb = file_attente.traiter(gm, lambda message, chemins: False, pause=0)
+        self.assertEqual(0, nb)
+        self.assertEqual([], gm.appels)
+        item = self.lire("posts/queue.json")[0]
+        self.assertEqual("pending", item["status"])
+        self.assertIn("claimed_at", item)
+
     def test_element_interrompu_passe_en_erreur_sans_renvoi(self):
         self.ecrire("posts/queue.json", [
             {"message": "a", "status": "pending", "claimed_at": "2026-11-08T10:00:00Z"},

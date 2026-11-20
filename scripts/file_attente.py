@@ -245,7 +245,9 @@ def traiter(gm, sauver, dry=False, maxi=MAX_PAR_CYCLE, pause=PAUSE_ENTRE_ENVOIS)
                 continue
             item["claimed_at"] = _maintenant()
             gm.jsave(absolu, data)
-            sauver("File d'attente : prise en charge", [chemin])
+            if not sauver("File d'attente : prise en charge", [chemin]):
+                gm.log(f"File d'attente {chemin} : enregistrement préalable impossible, action Facebook annulée.")
+                return faits
             try:
                 resultat = fonction(gm, item)
             except Exception as exc:  # jamais de plantage de la boucle pour un élément

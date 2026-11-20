@@ -1,3 +1,4 @@
+import datetime as dt
 import json
 import unittest
 from unittest.mock import patch
@@ -111,6 +112,54 @@ class CommentRetryTests(unittest.TestCase):
             )
         self.assertIsNone(verdict)
         self.assertIsNone(reason)
+
+    def test_processing_recent_est_ignore_et_processing_ancien_est_repris(self):
+        now = dt.datetime(2026, 11, 20, 12, 0, tzinfo=dt.timezone.utc)
+        recent = {
+            "comment_id": "c1", "status": "processing",
+            "date": (now - dt.timedelta(minutes=5)).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        }
+        old = {
+            "comment_id": "c2", "status": "processing",
+            "date": (now - dt.timedelta(minutes=20)).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        }
+        with patch.object(gm, "PAGE_ID", "page-1"), patch.object(gm, "NOW", now):
+            verdict, reason = gm.pre_filtre(
+                {"id": "c1", "from": {"id": "u1"}},
+                "post-1", {"reponses": [], "comment_ledger": [recent]}, {},
+            )
+            self.assertEqual("ignorer", verdict)
+            self.assertIn("prise en charge en cours", reason)
+            verdict, reason = gm.pre_filtre(
+                {"id": "c2", "from": {"id": "u2"}},
+                "post-1", {"reponses": [], "comment_ledger": [old]}, {},
+            )
+            self.assertIsNone(verdict)
+
+    def test_echec_persistance_claim_n_envoie_pas_la_reponse(self):
+        posts = [{"id": "post-1", "message": "Publication", "comments": {"data": [
+            {"id": "comment-claim", "message": "Bonjour", "from": {"id": "user-1"}},
+        ]}}]
+        state = {"reponses": [], "a_traiter": [], "comment_ledger": []}
+        calls = []
+        with (
+            patch.object(gm, "PAGE_ID", "page-1"),
+            patch.object(gm, "DRY", False),
+            patch.object(gm, "NOW", dt.datetime(2026, 11, 20, 12, 0, tzinfo=dt.timezone.utc)),
+            patch.object(gm, "glm", return_value='{"reponse":"Merci pour ton commentaire !"}'),
+            patch.object(gm, "fb_reply", side_effect=lambda *args: calls.append(args)),
+            patch.object(gm, "jsave"),
+            patch.object(gm, "jload", return_value=[]),
+            patch.object(gm.comment_store, "save_ledger"),
+        ):
+            sent, human = gm.gerer_reponses(
+                {"reponses": {"actif": True}}, state, posts,
+                sauver=lambda message, chemins: False,
+            )
+        self.assertEqual([], calls)
+        self.assertEqual([], sent)
+        self.assertEqual([], human)
+        self.assertEqual("processing", state["comment_ledger"][0]["status"])
 
     def test_page_authored_comments_are_skipped_to_prevent_reply_loops(self):
         comment = {
