@@ -10,6 +10,7 @@ Chef d'orchestre unique : c'est la seule tâche qui lit Facebook en continu.
 """
 import datetime as dt
 import os
+import json
 import subprocess
 import sys
 import time
@@ -51,8 +52,71 @@ def sortie_github(cle, valeur):
 def git(*args):
     return subprocess.run(["git", *args], capture_output=True, text=True, cwd=gm.ROOT)
 
+def _fusionner_json(a, b):
+    """Fusionne deux états JSON en conflit sans supprimer les entrées distinctes."""
+    if isinstance(a, dict) and isinstance(b, dict):
+        out = dict(a)
+        for key, value in b.items():
+            out[key] = _fusionner_json(out[key], value) if key in out else value
+        return out
+    if isinstance(a, list) and isinstance(b, list):
+        out = list(a)
+        positions = {}
+        for index, item in enumerate(out):
+            if isinstance(item, dict):
+                ident = next((str(item[k]) for k in ("comment_id", "id", "reply_id", "slot") if item.get(k) is not None), None)
+                if ident is not None: positions[(item.get("type", ""), ident)] = index
+        for item in b:
+            if isinstance(item, dict):
+                ident = next((str(item[k]) for k in ("comment_id", "id", "reply_id", "slot") if item.get(k) is not None), None)
+                key = (item.get("type", ""), ident) if ident is not None else None
+                if key is not None and key in positions:
+                    i = positions[key]; out[i] = _fusionner_json(out[i], item)
+                else:
+                    if item not in out:
+                        out.append(item)
+                    if key is not None: positions[key] = len(out) - 1
+            elif item not in out:
+                out.append(item)
+        return out
+    # En rebase, b correspond au commit local du bot : ses valeurs récentes priment.
+    return b if b is not None else a
+
+
+def _resoudre_conflits_json():
+    """Résout uniquement les conflits JSON en fusionnant les deux versions."""
+    listing = git("diff", "--name-only", "--diff-filter=U")
+    chemins = [x.strip() for x in listing.stdout.splitlines() if x.strip()]
+    if listing.returncode != 0 or not chemins:
+        return False
+    for chemin in chemins:
+        if not chemin.lower().endswith(".json"):
+            print(f"Conflit non JSON non résolu automatiquement : {chemin}", flush=True)
+            return False
+        gauche = git("show", f":2:{chemin}")
+        droite = git("show", f":3:{chemin}")
+        if gauche.returncode != 0 or droite.returncode != 0:
+            return False
+        try:
+            fusion = _fusionner_json(json.loads(gauche.stdout), json.loads(droite.stdout))
+        except (ValueError, TypeError):
+            print(f"JSON en conflit invalide : {chemin}", flush=True)
+            return False
+        with open(os.path.join(gm.ROOT, chemin), "w", encoding="utf-8") as stream:
+            json.dump(fusion, stream, ensure_ascii=False, indent=2)
+            stream.write("\\n")
+        if git("add", chemin).returncode != 0:
+            return False
+    suite = subprocess.run(["git", "-c", "core.editor=true", "rebase", "--continue"],
+                           capture_output=True, text=True, cwd=gm.ROOT)
+    if suite.returncode != 0:
+        print("Rebase toujours bloqué après fusion JSON : " + suite.stderr[-500:], flush=True)
+        return False
+    return True
+
+
 def enregistrer(message, chemins=None):
-    """Commit + push des fichiers de données. Renvoie True si tout est enregistré."""
+    """Commit + push résilient aux écritures concurrentes du dépôt de données."""
     if DRY: return True
     git("config", "user.name", "github-actions")
     git("config", "user.email", "actions@users.noreply.github.com")
@@ -61,18 +125,42 @@ def enregistrer(message, chemins=None):
     if git("diff", "--cached", "--quiet").returncode == 0: return True
     commit = git("commit", "-m", message)
     if commit.returncode != 0:
-        print("Avertissement : commit impossible : " + commit.stderr[-500:]); return False
-    for _ in range(3):
+        print("Avertissement : commit impossible : " + commit.stderr[-500:], flush=True)
+        return False
+    for tentative in range(4):
         pull = git("pull", "--rebase", "--autostash")
-        if pull.returncode == 0 and git("push").returncode == 0: return True
-        time.sleep(5)
-    print("Avertissement : push impossible, état conservé sur le runner.")
+        if pull.returncode == 0:
+            push = git("push")
+            if push.returncode == 0: return True
+        conflits = git("diff", "--name-only", "--diff-filter=U")
+        if conflits.returncode == 0 and conflits.stdout.strip():
+            print("Conflit Git détecté : fusion JSON contrôlée en cours.", flush=True)
+            if not _resoudre_conflits_json():
+                git("rebase", "--abort")
+                print("Conflit non résolu automatiquement : aucune réponse Facebook ne sera envoyée.", flush=True)
+                return False
+            push = git("push")
+            if push.returncode == 0: return True
+        else:
+            # Ne jamais laisser un rebase interrompu empoisonner les cycles suivants.
+            git("rebase", "--abort")
+        time.sleep(3 * (tentative + 1))
+    print("Avertissement : push impossible après 4 tentatives ; état local conservé.", flush=True)
     return False
 
+
 def synchroniser():
-    """Récupère les nouveautés du dépôt de données (éléments ajoutés par l'app)."""
+    """Récupère les nouveautés du dépôt privé avant tout traitement Facebook."""
     if DRY: return True
-    return git("pull", "--rebase", "--autostash", "-q").returncode == 0
+    etat = git("status", "--porcelain")
+    if "UU " in etat.stdout or "AA " in etat.stdout or "DD " in etat.stdout:
+        git("rebase", "--abort")
+    resultat = git("pull", "--rebase", "--autostash", "-q")
+    if resultat.returncode != 0:
+        git("rebase", "--abort")
+        print("Synchronisation Git impossible : " + resultat.stderr[-400:], flush=True)
+        return False
+    return True
 
 def signature(posts):
     """Empreinte de chaque commentaire, à tous les niveaux de l'arbre."""
@@ -258,7 +346,12 @@ def main():
             # Synchroniser les réglages modifiés depuis l'application avant le cycle.
             if FILE_ATTENTE_ACTIVE:
                 if not synchroniser():
-                    print("Avertissement : synchronisation du dépôt de données impossible.", flush=True)
+                    print("Synchronisation du dépôt de données impossible : cycle suspendu, aucune réponse ne sera générée tant que l'état partagé n'est pas à jour.", flush=True)
+                    sante.maj(gm, session=session_sante, echecs=echecs + 1,
+                              extra=("Dépôt de données désynchronisé : cycle suspendu.",))
+                    sante.pousser(gm, enregistrer)
+                    dormir(INTERVALLE)
+                    continue
                 cfg = gm.jload(gm.P("glm", "config.json"), cfg)
             cycles += 1
             session_sante["cycles"] = cycles
