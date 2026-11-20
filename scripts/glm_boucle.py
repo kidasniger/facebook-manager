@@ -228,20 +228,8 @@ class MessagesApp:
                 self.modifie = False
             self.dernier_push = time.time()
 
-def configuration_effective(cfg, auto_reponses=None):
-    """Applique le verrou GitHub AUTO_REPONSES sans désactiver les autres tâches du bot."""
-    resultat = dict(cfg) if isinstance(cfg, dict) else {}
-    verrou = str(auto_reponses if auto_reponses is not None else os.environ.get("AUTO_REPONSES", "on")).strip().lower()
-    if verrou == "off":
-        reponses = resultat.get("reponses")
-        reponses = dict(reponses) if isinstance(reponses, dict) else {}
-        reponses["actif"] = False
-        resultat["reponses"] = reponses
-    return resultat
-
-
 def main():
-    cfg = configuration_effective(gm.jload(gm.P("glm", "config.json"), {}))
+    cfg = gm.jload(gm.P("glm", "config.json"), {})
     if not cfg.get("actif", True):
         print('GLM désactivé (glm/config.json, "actif": false).'); sortie_github("relance", "non"); return 0
     if not (gm.PAGE_ID and gm.TOKEN):
@@ -268,6 +256,11 @@ def main():
     echecs = 0; total_reponses = 0; cycles = 0; silence_precedent = None
     while time.time() - DEBUT < DUREE:
         try:
+            # Synchroniser les réglages modifiés depuis l'application avant le cycle.
+            if FILE_ATTENTE_ACTIVE:
+                if not synchroniser():
+                    print("Avertissement : synchronisation du dépôt de données impossible.", flush=True)
+                cfg = gm.jload(gm.P("glm", "config.json"), cfg)
             cycles += 1
             session_sante["cycles"] = cycles
             session_sante["reponses"] = total_reponses
@@ -327,7 +320,6 @@ def main():
             except Exception as exc:  # Messenger ne doit jamais bloquer les commentaires ni les files d'attente
                 print(f"Messenger : erreur inattendue ({type(exc).__name__}), ignorée.", flush=True)
             if FILE_ATTENTE_ACTIVE:
-                if not synchroniser(): print("Avertissement : synchronisation du dépôt de données impossible.", flush=True)
                 traites = file_attente.traiter(gm, enregistrer, dry=DRY)
                 if traites: print(f"-> {traites} élément(s) de la file d'attente traité(s).", flush=True)
                 aimes = aimes_auto.traiter(gm, enregistrer, dry=DRY)
