@@ -82,6 +82,10 @@ class AimesAutoTests(unittest.TestCase):
         ]}
         gm = faux_gm(self.racine, [(200, feed), (200, {"success": True}), (200, {"success": True})])
         self.assertEqual(aimes_auto.traiter(gm, self.sauver), 2)
+        self.assertEqual(gm.appels[0]["method"], "GET")
+        self.assertIsNone(gm.appels[0]["data"])
+        self.assertIn("fields=id%2Cfrom%2Ccreated_time", gm.appels[0]["url"])
+        self.assertIn("access_token=tok", gm.appels[0]["url"])
         urls = [a["url"] for a in gm.appels]
         self.assertIn("p2/likes", urls[1])    # les plus anciennes d'abord
         self.assertIn("p1/likes", urls[2])
