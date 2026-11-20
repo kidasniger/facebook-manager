@@ -125,6 +125,15 @@ class AimesAutoTests(unittest.TestCase):
         self.assertEqual(memo["like"], "ok")
         self.assertEqual(memo["message"], "error")
 
+    def test_echec_persistance_claim_n_envoie_pas_le_like(self):
+        self.ecrire("glm/config.json", {"aimes": {"actif": True}})
+        feed = {"data": [{"id": "p1", "from": {"id": "u9"}}]}
+        gm = faux_gm(self.racine, [(200, feed)])
+        self.assertEqual(0, aimes_auto.traiter(gm, lambda message, chemins: False))
+        self.assertEqual(1, len(gm.appels))  # lecture du fil uniquement
+        self.assertFalse(any("/likes" in a["url"] for a in gm.appels))
+        self.assertEqual("pending", self.memo()["faits"]["p1"]["like"])
+
     def test_limite_par_cycle(self):
         self.ecrire("glm/config.json", {"aimes": {"actif": True}})
         feed = {"data": [{"id": f"p{i}", "from": {"id": "u9"}} for i in range(5)]}
