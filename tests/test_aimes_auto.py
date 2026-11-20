@@ -9,7 +9,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(
 import aimes_auto  # noqa: E402
 
 
-def faux_gm(racine, reponses):
+def faux_gm(racine, reponses, verification=True):
     """Mini module « gm » : fichiers réels dans `racine`, Facebook simulé par `reponses`."""
     appels = []
 
@@ -30,6 +30,8 @@ def faux_gm(racine, reponses):
 
     def http(url, data=None, headers=None, timeout=90, method=None):
         appels.append({"url": url, "data": data, "method": method})
+        if method == "GET" and "/likes?" in url:
+            return 200, {"summary": {"has_liked": verification}}
         if not reponses:
             raise AssertionError("appel Facebook imprévu : " + url)
         return reponses.pop(0)
@@ -80,7 +82,7 @@ class AimesAutoTests(unittest.TestCase):
             {"id": "p1", "from": {"id": "page-1"}},
             {"id": "p2", "from": {"id": "u9"}},
         ]}
-        gm = faux_gm(self.racine, [(200, feed), (200, {"success": True}), (200, {"summary": {"has_liked": True}}), (200, {"success": True}), (200, {"summary": {"has_liked": True}})])
+        gm = faux_gm(self.racine, [(200, feed), (200, {"success": True}), (200, {"success": True})])
         self.assertEqual(aimes_auto.traiter(gm, self.sauver), 2)
         self.assertEqual(gm.appels[0]["method"], "GET")
         self.assertIsNone(gm.appels[0]["data"])
@@ -105,7 +107,6 @@ class AimesAutoTests(unittest.TestCase):
         gm = faux_gm(self.racine, [
             (200, feed),
             (200, {"success": True}),
-            (200, {"summary": {"has_liked": True}}),
             (200, {"message_id": "m1"}),
             (200, {"success": True}),
             (200, {"summary": {"has_liked": True}}),
@@ -144,10 +145,10 @@ class AimesAutoTests(unittest.TestCase):
     def test_limite_par_cycle(self):
         self.ecrire("glm/config.json", {"aimes": {"actif": True}})
         feed = {"data": [{"id": f"p{i}", "from": {"id": "u9"}} for i in range(5)]}
-        gm = faux_gm(self.racine, [(200, feed)] + sum(([(200, {"success": True}), (200, {"summary": {"has_liked": True}})] for _ in range(3)), []))
+        gm = faux_gm(self.racine, [(200, feed)] + [(200, {"success": True})] * 3)
         self.assertEqual(aimes_auto.traiter(gm, self.sauver), 3)   # LIMITE_PAR_CYCLE
         # au cycle suivant, les 2 restantes passent
-        gm2 = faux_gm(self.racine, [(200, feed)] + sum(([(200, {"success": True}), (200, {"summary": {"has_liked": True}})] for _ in range(2)), []))
+        gm2 = faux_gm(self.racine, [(200, feed)] + [(200, {"success": True})] * 2)
         self.assertEqual(aimes_auto.traiter(gm2, self.sauver), 2)
         gm3 = faux_gm(self.racine, [(200, feed)])
         self.assertEqual(aimes_auto.traiter(gm3, self.sauver), 0)
@@ -156,11 +157,7 @@ class AimesAutoTests(unittest.TestCase):
     def test_success_api_sans_confirmation_ne_est_pas_un_like_ok(self):
         self.ecrire("glm/config.json", {"aimes": {"actif": True}})
         feed = {"data": [{"id": "p1", "from": {"id": "u9"}}]}
-        gm = faux_gm(self.racine, [
-            (200, feed),
-            (200, {"success": True}),
-            (200, {"summary": {"has_liked": False}}),
-        ])
+        gm = faux_gm(self.racine, [(200, feed), (200, {"success": True})], verification=False)
         self.assertEqual(aimes_auto.traiter(gm, self.sauver), 1)
         entree = self.memo()["faits"]["p1"]
         self.assertEqual(entree["like"], "erreur")
