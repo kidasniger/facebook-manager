@@ -114,7 +114,7 @@ def silence_actif(now=None):
 def passe(cfg, state, posts):
     gm.journal.clear(); gm.erreurs.clear()
     gm.NOW = dt.datetime.now(dt.timezone.utc)
-    envoyees, humain = gm.gerer_reponses(cfg, state, posts)
+    envoyees, humain = gm.gerer_reponses(cfg, state, posts, sauver=enregistrer)
     if humain and not DRY:
         state["a_traiter"] = (state["a_traiter"] + humain)[-100:]
         gm.jsave(gm.P("inbox", "a_traiter.json"), state["a_traiter"])
