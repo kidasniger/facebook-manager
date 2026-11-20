@@ -104,7 +104,7 @@ def _resoudre_conflits_json():
             return False
         with open(os.path.join(gm.ROOT, chemin), "w", encoding="utf-8") as stream:
             json.dump(fusion, stream, ensure_ascii=False, indent=2)
-            stream.write("\\n")
+            stream.write("\n")
         if git("add", chemin).returncode != 0:
             return False
     suite = subprocess.run(["git", "-c", "core.editor=true", "rebase", "--continue"],
