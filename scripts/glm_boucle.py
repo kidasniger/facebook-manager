@@ -31,7 +31,7 @@ PAGE_INFO_SECONDES = 600
 # Messenger : un appel de liste toutes les MESSAGES_SECONDES (doublé si quota >= 50 %, suspendu >= 75 %).
 MESSAGES_SECONDES = max(30, int(os.environ.get("MESSAGES_SECONDES") or 120))
 PUSH_MESSAGES_SECONDES = 120
-FILE_ATTENTE_ACTIVE = (os.environ.get("FILE_ATTENTE") or "glm") != "workflows"
+FILE_ATTENTE_ACTIVE = True
 DRY = gm.DRY
 DEBUT = time.time()
 CODES_JETON = {102, 190, 463, 467}
