@@ -62,9 +62,9 @@ jobs:
       DRY_RUN: ${{ github.event.inputs.dry_run == 'true' && '1' || '0' }}
       DUREE_MINUTES: ${{ github.event.inputs.minutes || '330' }}
       INTERVALLE_SECONDS: "60"
-      BALAYAGE_MINUTES: ${{ vars.BALAYAGE_MINUTES || '20' }}
+      BALAYAGE_MINUTES: "5"
       STATS_HEURES: ${{ vars.STATS_HEURES || '6' }}
-      MESSAGES_SECONDES: ${{ vars.MESSAGES_SECONDES || '120' }}
+      MESSAGES_SECONDES: "60"
     steps:
       - uses: actions/checkout@v4
       - name: Arrêter les anciennes sessions du bot
