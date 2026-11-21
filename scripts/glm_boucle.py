@@ -414,8 +414,8 @@ def main():
             if FILE_ATTENTE_ACTIVE:
                 traites = file_attente.traiter(gm, enregistrer, dry=DRY)
                 if traites: print(f"-> {traites} élément(s) de la file d'attente traité(s).", flush=True)
-                aimes = aimes_auto.traiter(gm, enregistrer, dry=DRY)
-                if aimes: print(f"-> {aimes} publication(s) aimée(s) automatiquement.", flush=True)
+                aimes = aimes_auto.traiter(gm, enregistrer, posts=posts, dry=DRY)
+                if aimes: print(f"-> {aimes} commentaire(s)/réponse(s) aimé(s) automatiquement.", flush=True)
             # Le compteur doit inclure les réponses de CE cycle avant d'écrire le rapport.
             session_sante["reponses"] = total_reponses
             sante.maj(gm, session=session_sante, echecs=echecs)
