@@ -14,7 +14,7 @@ import datetime as dt
 import time
 
 FICHIER = "bot/sante.json"
-PUSH_MINUTES = 20        # rythme de commit du rapport (l'appli tolère 30 min de silence)
+PUSH_MINUTES = 1         # publier l'état de santé chaque minute pour les diagnostics de l'application
 MAX_ERREURS = 10
 FICHIERS_FILE = ("posts/queue.json", "posts/avance.json", "posts/replies.json",
                  "posts/messages.json", "posts/actions.json")

@@ -26,11 +26,11 @@ DUREE = int(os.environ.get("DUREE_MINUTES") or 330) * 60
 INTERVALLE = max(20, int(os.environ.get("INTERVALLE_SECONDS") or 60))
 BALAYAGE_MINUTES = int(os.environ.get("BALAYAGE_MINUTES") or 20)
 STATS_HEURES = float(os.environ.get("STATS_HEURES") or 6)
-PUSH_CACHE_SECONDES = 300
+PUSH_CACHE_SECONDES = 60  # publier le cache de commentaires au moins chaque minute
 PAGE_INFO_SECONDES = 600
 # Messenger : un appel de liste toutes les MESSAGES_SECONDES (doublé si quota >= 50 %, suspendu >= 75 %).
 MESSAGES_SECONDES = max(30, int(os.environ.get("MESSAGES_SECONDES") or 120))
-PUSH_MESSAGES_SECONDES = 120
+PUSH_MESSAGES_SECONDES = 60  # publier les changements Messenger sans attendre la fin de session
 FILE_ATTENTE_ACTIVE = True
 DRY = gm.DRY
 DEBUT = time.time()
