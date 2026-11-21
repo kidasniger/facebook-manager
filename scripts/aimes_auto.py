@@ -1,24 +1,13 @@
-"""Auto-like des publications et message privé facultatif à l'auteur.
+"""Aime automatiquement les commentaires Facebook (jamais les publications).
 
-Réglé par glm/config.json, bloc « aimes » :
-  {"actif": true, "message": "texte facultatif envoyé par Messenger"}
-
-À chaque cycle de glm-live (mémoire dans glm/aimes.json) :
-- liste les dernières publications de la Page (feed, 25 dernières),
-- like celles jamais traitées, au plus LIMITE_PAR_CYCLE par cycle,
-  les plus anciennes d'abord,
-- si « message » est configuré, envoie un MP Messenger à l'auteur — jamais à la
-  Page elle-même ; les échecs (fenêtre de 24 h, permission) sont journalisés
-  sans casser la boucle.
-
-Un like en erreur est retenté au plus ESSAIS_MAX cycles avant abandon.
+Réglé par glm/config.json, bloc « aimes ».
+Les commentaires racines et leurs réponses sont fournis par le lecteur/cache
+principal. La mémoire séparée évite de confondre les anciens likes de publications.
 """
 import datetime as dt
 import urllib.parse
 
-import file_attente
-
-MEMOIRE = ("glm", "aimes.json")
+MEMOIRE = ("glm", "aimes-commentaires.json")
 LIMITE_PAR_CYCLE = 3
 ESSAIS_MAX = 3
 
@@ -34,129 +23,120 @@ def _erreur(res):
     return str(res)[:160]
 
 
-def _verifier_like(gm, pid):
-    """Vérifie côté Graph API que la Page a réellement aimé la publication."""
-    params = urllib.parse.urlencode({"summary": "true", "access_token": gm.TOKEN})
-    st, res = gm.http(f"{gm.GRAPH}/{pid}/likes?{params}", method="GET")
+def _verifier_like(gm, comment_id):
+    """Lit le champ Comment.user_likes, sans confondre un POST accepté et un like visible."""
+    params = urllib.parse.urlencode({
+        "fields": "id,user_likes",
+        "access_token": gm.TOKEN,
+    })
+    st, res = gm.http(f"{gm.GRAPH}/{comment_id}?{params}", method="GET")
     if st != 200 or not isinstance(res, dict) or res.get("error"):
         return None, _erreur(res)
-    summary = res.get("summary")
-    if not isinstance(summary, dict) or "has_liked" not in summary:
-        return None, "Facebook n'a pas renvoyé summary.has_liked"
-    return bool(summary["has_liked"]), ""
+    if "user_likes" not in res:
+        return None, "Facebook n'a pas renvoyé le champ user_likes"
+    return res["user_likes"] is True, ""
 
 
-def _compacte(faits, garde=300):
-    """Mémoire bornée : on garde les entrées les plus récentes."""
+def _compacte(faits, garde=1000):
     if len(faits) <= garde:
         return faits
-    tries = sorted(faits.items(),
-                   key=lambda kv: str((kv[1] or {}).get("le") or ""),
-                   reverse=True)
+    tries = sorted(
+        faits.items(),
+        key=lambda kv: str((kv[1] or {}).get("le") or ""),
+        reverse=True,
+    )
     return dict(tries[:garde])
 
 
-def traiter(gm, sauver, dry=False):
-    """Like les nouvelles publications (+ MP facultatif). Renvoie le nombre traité."""
+def traiter(gm, sauver, posts=None, dry=False):
+    """Aime uniquement les commentaires et réponses des visiteurs."""
     cfg = (gm.jload(gm.P("glm", "config.json"), {}) or {}).get("aimes")
     if not isinstance(cfg, dict) or not cfg.get("actif"):
         return 0
-    message = str(cfg.get("message") or "").strip()
-    # Lecture du fil = GET. Passer les paramètres dans le corps ferait
-    # interpréter l'appel comme une création de publication vide (erreur 197).
-    params = urllib.parse.urlencode({
-        "fields": "id,from,created_time", "limit": "25", "access_token": gm.TOKEN,
-    })
-    st, res = gm.http(f"{gm.GRAPH}/{gm.PAGE_ID}/feed?{params}", method="GET")
-    if st != 200 or not isinstance(res, dict) or res.get("error"):
-        gm.log(f"Aimes : lecture du fil impossible ({_erreur(res)})")
+    if posts is None:
+        gm.log("Aimes commentaires : aucun fil fourni, aucun like envoyé.")
         return 0
-    posts = [p for p in res.get("data") or [] if isinstance(p, dict) and p.get("id")]
+
+    commentaires = []
+    vus = set()
+    for post in posts:
+        for comment in (post.get("comments") or {}).get("data") or []:
+            if not isinstance(comment, dict):
+                continue
+            cid = str(comment.get("id") or "")
+            auteur = str((comment.get("from") or {}).get("id") or "")
+            if not cid or not auteur or auteur == str(gm.PAGE_ID) or cid in vus:
+                continue
+            vus.add(cid)
+            commentaires.append(comment)
+
     memoire = gm.jload(gm.P(*MEMOIRE), {})
     if not isinstance(memoire, dict):
         memoire = {}
     faits = memoire.setdefault("faits", {})
     compteur = 0
-    for p in reversed(posts):            # les plus anciennes d'abord
+
+    for comment in commentaires:
         if compteur >= LIMITE_PAR_CYCLE:
-            break                        # plafond par cycle : pas de rafale
-        pid = p["id"]
-        deja = faits.get(pid)
-        if isinstance(deja, dict) and deja.get("like") in ("ok", "deja"):
-            if deja.get("verifie"):
-                continue
-            # Les anciennes entrées « ok » n'étaient pas vérifiées côté Facebook.
-            verifie, detail = _verifier_like(gm, pid)
-            if verifie is True:
-                deja["verifie"] = True
-                faits[pid] = deja
-                gm.jsave(gm.P(*MEMOIRE), {"faits": _compacte(faits)})
-                sauver("Aimes : confirmation Facebook", ["glm/aimes.json"])
-                continue
-            if verifie is None:
-                gm.log(f"Aimes {pid} : vérification impossible ({detail}); aucun succès affirmé.")
-                continue
-            deja["like"] = "a_verifier"
-            faits[pid] = deja
-        if isinstance(deja, dict) and deja.get("essais", 0) >= ESSAIS_MAX:
-            continue
-        if dry:
-            gm.log(f"[TEST] aimes : la publication {pid} serait aimée.")
+            break
+        cid = str(comment["id"])
+        deja = faits.get(cid)
+        if isinstance(deja, dict) and deja.get("like") == "ok" and deja.get("verifie"):
             continue
         essais_precedents = int((deja or {}).get("essais") or 0)
-        faits[pid] = {"le": _maintenant(), "like": "pending", "essais": essais_precedents}
+        if essais_precedents >= ESSAIS_MAX:
+            continue
+
+        # Réconcilier d'abord un succès/pending ancien avant tout nouvel envoi.
+        verifie, detail = _verifier_like(gm, cid)
+        if verifie is True:
+            faits[cid] = {"le": _maintenant(), "like": "ok", "essais": essais_precedents,
+                          "verifie": True}
+            gm.jsave(gm.P(*MEMOIRE), {"faits": _compacte(faits)})
+            sauver("Aimes commentaires : état confirmé", ["glm/aimes-commentaires.json"])
+            continue
+        if verifie is None:
+            gm.log(f"Aimes commentaire {cid} : vérification impossible ({detail}); aucun succès affirmé.")
+            continue
+        if dry:
+            gm.log(f"[TEST] aimes commentaires : le commentaire {cid} serait aimé.")
+            continue
+
+        faits[cid] = {"le": _maintenant(), "like": "pending", "essais": essais_precedents}
         gm.jsave(gm.P(*MEMOIRE), {"faits": _compacte(faits)})
-        if not sauver("Aimes : prise en charge", ["glm/aimes.json"]):
-            gm.log(f"Aimes {pid} : enregistrement préalable impossible, like annulé.")
+        if not sauver("Aimes commentaires : prise en charge", ["glm/aimes-commentaires.json"]):
+            gm.log(f"Aimes commentaire {cid} : enregistrement préalable impossible, like annulé.")
             return compteur
-        st, res = gm.http(f"{gm.GRAPH}/{pid}/likes", {"access_token": gm.TOKEN})
-        post_ok = st == 200 and isinstance(res, dict) and \
-            (res.get("success") is True or res.get("id"))
-        note = ""
-        if isinstance(res, dict) and \
-                "already" in str((res.get("error") or {}).get("message", "")).lower():
-            post_ok, note = True, "déjà aimée selon la réponse API"
-        verifie, detail = (False, "")
+
+        st, res = gm.http(
+            f"{gm.GRAPH}/{cid}/likes",
+            {"access_token": gm.TOKEN},
+        )
+        post_ok = st == 200 and isinstance(res, dict) and res.get("success") is True
+        verifie_apres, detail_apres = (False, "")
         if post_ok:
-            verifie, detail = _verifier_like(gm, pid)
-        ok = post_ok and verifie is True
+            verifie_apres, detail_apres = _verifier_like(gm, cid)
+        ok = post_ok and verifie_apres is True
         essais = essais_precedents + 1
-        entree = {"le": _maintenant(),
-                  "like": "ok" if ok else "erreur",
-                  "essais": essais}
+        entree = {
+            "le": _maintenant(),
+            "like": "ok" if ok else "erreur",
+            "essais": essais,
+        }
         if ok:
             entree["verifie"] = True
-        if note:
-            entree["note"] = note
-        if not ok:
+        else:
             entree["derniere_erreur"] = (
-                f"POST: {_erreur(res)}; vérification: {detail or 'has_liked=false'}"
+                f"POST: {_erreur(res)}; vérification: {detail_apres or 'user_likes=false'}"
                 if post_ok else _erreur(res)
             )
-        compteur += 1
-        # message privé facultatif à l'auteur (jamais à la Page elle-même)
-        if ok and message:
-            auteur = p.get("from") if isinstance(p.get("from"), dict) else {}
-            if str(auteur.get("id") or "") and auteur["id"] != gm.PAGE_ID:
-                rep = file_attente._repondre_message(
-                    gm, {"recipient_id": auteur["id"], "message": message})
-                entree["message"] = rep.get("status")
-                if rep.get("erreur"):
-                    entree["message_erreur"] = rep["erreur"]
-            else:
-                entree["message"] = "ignoré (auteur inconnu ou Page elle-même)"
-        if ok or essais >= ESSAIS_MAX:
-            faits[pid] = entree          # terminé (ok) ou abandonné (3 échecs)
-        else:
-            faits[pid] = {               # en erreur : retenté au prochain cycle
-                "le": entree["le"],
-                "like": "erreur",
-                "essais": essais,
-                "derniere_erreur": entree["derniere_erreur"],
-            }
+        faits[cid] = entree
         gm.jsave(gm.P(*MEMOIRE), {"faits": _compacte(faits)})
-        sauver("Aimes : publication traitée", ["glm/aimes.json"])
-        gm.log(f"Aimes {pid} : like {entree['like']}"
-               + (", confirmé par Facebook" if ok else f", non confirmé ({entree.get('derniere_erreur', 'vérification échouée')})")
-               + (f", MP {entree.get('message')}" if message else ""))
+        sauver("Aimes commentaires : résultat", ["glm/aimes-commentaires.json"])
+        compteur += 1
+        gm.log(
+            f"Aimes commentaire {cid} : {entree['like']}"
+            + (", confirmé par Facebook" if ok else
+               f", non confirmé ({entree.get('derniere_erreur', 'vérification échouée')})")
+        )
     return compteur
