@@ -381,7 +381,8 @@ def main():
             print(f"Analyse : {len(posts)} publication(s), {nombre} commentaire(s)/sous-commentaire(s) — "
                   f"{s['relus']} relue(s), {s['reutilises']} en cache{' (balayage complet)' if s['balayage'] else ''} — "
                   f"appels Facebook : {gm.APPELS['graph'] - appels_avant} — quota utilisé : {gm.USAGE['pct']} %", flush=True)
-            # Chaque cycle réexamine tout l'arbre. Le registre partagé écarte les succès
+            # Chaque cycle réexamine tout l'arbre ; le module aimes_auto aime les commentaires visiteurs uniquement.
+            # Le registre partagé écarte les succès
             # déjà traités ; les erreurs ne sont pas inscrites au registre et seront retentées.
             # Réponses automatiques : suspendues pendant les heures de silence
             # réglées dans l'appli. Le reste du cycle continue (caches, messages,
