@@ -9,8 +9,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(
 import aimes_auto  # noqa: E402
 
 
-def faux_gm(racine, reponses, verification=True):
-    """Mini module « gm » : fichiers réels dans `racine`, Facebook simulé par `reponses`."""
+def faux_gm(racine, reponses):
     appels = []
 
     def P(*parts):
@@ -30,18 +29,18 @@ def faux_gm(racine, reponses, verification=True):
 
     def http(url, data=None, headers=None, timeout=90, method=None):
         appels.append({"url": url, "data": data, "method": method})
-        if method == "GET" and "/likes?" in url:
-            return 200, {"summary": {"has_liked": verification}}
         if not reponses:
             raise AssertionError("appel Facebook imprévu : " + url)
         return reponses.pop(0)
 
-    return SimpleNamespace(ROOT=racine, P=P, jload=jload, jsave=jsave, http=http,
-                           log=lambda m: None, GRAPH="https://g/v", PAGE_ID="page-1",
-                           TOKEN="tok", appels=appels)
+    return SimpleNamespace(
+        ROOT=racine, P=P, jload=jload, jsave=jsave, http=http,
+        log=lambda m: None, GRAPH="https://g/v26.0", PAGE_ID="page-1",
+        TOKEN="tok", appels=appels,
+    )
 
 
-class AimesAutoTests(unittest.TestCase):
+class AimesCommentairesTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.racine = self.tmp.name
@@ -57,126 +56,127 @@ class AimesAutoTests(unittest.TestCase):
             json.dump(data, f)
 
     def memo(self):
-        with open(os.path.join(self.racine, "glm", "aimes.json"), encoding="utf-8") as f:
+        with open(os.path.join(self.racine, "glm", "aimes-commentaires.json"), encoding="utf-8") as f:
             return json.load(f)
 
     def sauver(self, message, chemins):
         self.sauves.append((message, chemins))
         return True
 
+    def config(self, actif=True):
+        self.ecrire("glm/config.json", {"aimes": {"actif": actif}})
+
+    def posts(self, comments):
+        return [{"id": "post-1", "comments": {"data": comments}}]
+
+    def get_like(self, liked):
+        return (200, {"id": "comment-id", "user_likes": liked})
+
     def test_desactive_ne_rien_faire(self):
-        self.ecrire("glm/config.json", {"aimes": {"actif": False}})
+        self.config(False)
+        gm = faux_gm(self.racine, [])
+        self.assertEqual(aimes_auto.traiter(gm, self.sauver, self.posts([])), 0)
+        self.assertEqual(gm.appels, [])
+
+    def test_absence_posts_ne_like_rien(self):
+        self.config()
         gm = faux_gm(self.racine, [])
         self.assertEqual(aimes_auto.traiter(gm, self.sauver), 0)
         self.assertEqual(gm.appels, [])
 
-    def test_absent_de_la_config_ne_rien_faire(self):
-        self.ecrire("glm/config.json", {})
+    def test_like_commentaire_et_reponse_visiteur_uniquement(self):
+        self.config()
+        comments = [
+            {"id": "c1", "from": {"id": "visitor-1"}},
+            {"id": "r1", "from": {"id": "visitor-2"}, "parent_id": "c1"},
+            {"id": "own", "from": {"id": "page-1"}},
+        ]
+        replies = [
+            self.get_like(False), (200, {"success": True}), self.get_like(True),
+            self.get_like(False), (200, {"success": True}), self.get_like(True),
+        ]
+        gm = faux_gm(self.racine, replies)
+        self.assertEqual(aimes_auto.traiter(gm, self.sauver, self.posts(comments)), 2)
+        post_urls = [a["url"] for a in gm.appels if a["data"] is not None]
+        self.assertEqual(len(post_urls), 2)
+        self.assertTrue(all(url.endswith("/likes") for url in post_urls))
+        self.assertTrue(any("/c1/likes" in url for url in post_urls))
+        self.assertTrue(any("/r1/likes" in url for url in post_urls))
+        self.assertFalse(any("/post-1/likes" in a["url"] for a in gm.appels))
+        faits = self.memo()["faits"]
+        self.assertEqual(faits["c1"]["like"], "ok")
+        self.assertEqual(faits["r1"]["like"], "ok")
+        self.assertNotIn("own", faits)
+
+    def test_commentaire_deja_aime_pas_de_post(self):
+        self.config()
+        gm = faux_gm(self.racine, [self.get_like(True)])
+        self.assertEqual(aimes_auto.traiter(
+            gm, self.sauver, self.posts([{"id": "c1", "from": {"id": "u1"}}])
+        ), 0)
+        self.assertEqual(len(gm.appels), 1)
+        self.assertEqual(self.memo()["faits"]["c1"]["like"], "ok")
+
+    def test_post_accepte_mais_user_likes_faux_n_est_pas_un_succes(self):
+        self.config()
+        gm = faux_gm(self.racine, [
+            self.get_like(False), (200, {"success": True}), self.get_like(False),
+        ])
+        self.assertEqual(aimes_auto.traiter(
+            gm, self.sauver, self.posts([{"id": "c1", "from": {"id": "u1"}}])
+        ), 1)
+        entry = self.memo()["faits"]["c1"]
+        self.assertEqual(entry["like"], "erreur")
+        self.assertNotIn("verifie", entry)
+
+    def test_echec_persistance_annule_le_post(self):
+        self.config()
+        gm = faux_gm(self.racine, [self.get_like(False)])
+        self.assertEqual(aimes_auto.traiter(
+            gm, lambda message, chemins: False,
+            self.posts([{"id": "c1", "from": {"id": "u1"}}])
+        ), 0)
+        self.assertEqual(len(gm.appels), 1)
+        self.assertFalse(any(a["data"] is not None for a in gm.appels))
+
+    def test_dry_run_ne_publie_pas(self):
+        self.config()
+        gm = faux_gm(self.racine, [self.get_like(False)])
+        self.assertEqual(aimes_auto.traiter(
+            gm, self.sauver, self.posts([{"id": "c1", "from": {"id": "u1"}}]), dry=True
+        ), 0)
+        self.assertEqual(len(gm.appels), 1)
+
+    def test_commentaire_duplique_traite_une_seule_fois(self):
+        self.config()
+        comment = {"id": "c1", "from": {"id": "u1"}}
+        gm = faux_gm(self.racine, [
+            self.get_like(False), (200, {"success": True}), self.get_like(True),
+        ])
+        self.assertEqual(aimes_auto.traiter(
+            gm, self.sauver, self.posts([comment, comment])
+        ), 1)
+
+    def test_limite_trois_par_cycle(self):
+        self.config()
+        comments = [{"id": f"c{i}", "from": {"id": f"u{i}"} } for i in range(5)]
+        responses = []
+        for _ in range(3):
+            responses += [self.get_like(False), (200, {"success": True}), self.get_like(True)]
+        gm = faux_gm(self.racine, responses)
+        self.assertEqual(aimes_auto.traiter(gm, self.sauver, self.posts(comments)), 3)
+        self.assertEqual(sum(a["data"] is not None for a in gm.appels), 3)
+
+    def test_ne_rejoue_pas_un_like_deja_confirme(self):
+        self.config()
+        self.ecrire("glm/aimes-commentaires.json", {
+            "faits": {"c1": {"like": "ok", "verifie": True, "essais": 1}}
+        })
         gm = faux_gm(self.racine, [])
-        self.assertEqual(aimes_auto.traiter(gm, self.sauver), 0)
+        self.assertEqual(aimes_auto.traiter(
+            gm, self.sauver, self.posts([{"id": "c1", "from": {"id": "u1"}}])
+        ), 0)
         self.assertEqual(gm.appels, [])
-
-    def test_like_des_nouvelles_publications(self):
-        self.ecrire("glm/config.json", {"aimes": {"actif": True}})
-        feed = {"data": [
-            {"id": "p1", "from": {"id": "page-1"}},
-            {"id": "p2", "from": {"id": "u9"}},
-        ]}
-        gm = faux_gm(self.racine, [(200, feed), (200, {"success": True}), (200, {"success": True})])
-        self.assertEqual(aimes_auto.traiter(gm, self.sauver), 2)
-        self.assertEqual(gm.appels[0]["method"], "GET")
-        self.assertIsNone(gm.appels[0]["data"])
-        self.assertIn("fields=id%2Cfrom%2Ccreated_time", gm.appels[0]["url"])
-        self.assertIn("access_token=tok", gm.appels[0]["url"])
-        urls = [a["url"] for a in gm.appels]
-        self.assertIn("p2/likes", urls[1])    # les plus anciennes d'abord
-        self.assertIn("p1/likes", urls[3])
-        self.assertEqual(self.memo()["faits"]["p1"]["like"], "ok")
-        # cycle suivant : rien de nouveau à aimer (l'appel feed est légitime)
-        gm2 = faux_gm(self.racine, [(200, feed)])
-        self.assertEqual(aimes_auto.traiter(gm2, self.sauver), 0)
-        self.assertEqual([a for a in gm2.appels if "/likes" in a["url"]], [])
-
-    def test_message_prive_a_l_auteur_seulement(self):
-        self.ecrire("glm/config.json", {"aimes": {"actif": True, "message": "Décris en détail"}})
-        feed = {"data": [
-            {"id": "p1", "from": {"id": "page-1"}},   # post de la Page : pas de MP
-            {"id": "p2", "from": {"id": "u9"}},       # post visiteur : MP
-        ]}
-        # ordre : fil, like p2, MP u9, like p1
-        gm = faux_gm(self.racine, [
-            (200, feed),
-            (200, {"success": True}),
-            (200, {"message_id": "m1"}),
-            (200, {"success": True}),
-            (200, {"summary": {"has_liked": True}}),
-        ])
-        self.assertEqual(aimes_auto.traiter(gm, self.sauver), 2)
-        mp = [a for a in gm.appels if "/messages" in a["url"]]
-        self.assertEqual(len(mp), 1)
-        self.assertIn("u9", mp[0]["url"])
-        memo = self.memo()["faits"]
-        self.assertEqual(memo["p2"]["message"], "replied")
-        self.assertIn("ignor\u00e9", memo["p1"]["message"])
-
-    def test_mp_en_echec_ne_bloque_pas_le_like(self):
-        self.ecrire("glm/config.json", {"aimes": {"actif": True, "message": "Salut"}})
-        feed = {"data": [{"id": "p2", "from": {"id": "u9"}}]}
-        gm = faux_gm(self.racine, [
-            (200, feed),
-            (200, {"success": True}),
-            (200, {"summary": {"has_liked": True}}),
-            (200, {"error": {"code": 10, "error_subcode": 2018278, "message": "24h"}}),
-        ])
-        self.assertEqual(aimes_auto.traiter(gm, self.sauver), 1)
-        memo = self.memo()["faits"]["p2"]
-        self.assertEqual(memo["like"], "ok")
-        self.assertEqual(memo["message"], "error")
-
-    def test_echec_persistance_claim_n_envoie_pas_le_like(self):
-        self.ecrire("glm/config.json", {"aimes": {"actif": True}})
-        feed = {"data": [{"id": "p1", "from": {"id": "u9"}}]}
-        gm = faux_gm(self.racine, [(200, feed)])
-        self.assertEqual(0, aimes_auto.traiter(gm, lambda message, chemins: False))
-        self.assertEqual(1, len(gm.appels))  # lecture du fil uniquement
-        self.assertFalse(any("/likes" in a["url"] for a in gm.appels))
-        self.assertEqual("pending", self.memo()["faits"]["p1"]["like"])
-
-    def test_limite_par_cycle(self):
-        self.ecrire("glm/config.json", {"aimes": {"actif": True}})
-        feed = {"data": [{"id": f"p{i}", "from": {"id": "u9"}} for i in range(5)]}
-        gm = faux_gm(self.racine, [(200, feed)] + [(200, {"success": True})] * 3)
-        self.assertEqual(aimes_auto.traiter(gm, self.sauver), 3)   # LIMITE_PAR_CYCLE
-        # au cycle suivant, les 2 restantes passent
-        gm2 = faux_gm(self.racine, [(200, feed)] + [(200, {"success": True})] * 2)
-        self.assertEqual(aimes_auto.traiter(gm2, self.sauver), 2)
-        gm3 = faux_gm(self.racine, [(200, feed)])
-        self.assertEqual(aimes_auto.traiter(gm3, self.sauver), 0)
-        self.assertEqual([a for a in gm3.appels if "/likes" in a["url"]], [])
-
-    def test_success_api_sans_confirmation_ne_est_pas_un_like_ok(self):
-        self.ecrire("glm/config.json", {"aimes": {"actif": True}})
-        feed = {"data": [{"id": "p1", "from": {"id": "u9"}}]}
-        gm = faux_gm(self.racine, [(200, feed), (200, {"success": True})], verification=False)
-        self.assertEqual(aimes_auto.traiter(gm, self.sauver), 1)
-        entree = self.memo()["faits"]["p1"]
-        self.assertEqual(entree["like"], "erreur")
-        self.assertNotIn("verifie", entree)
-
-    def test_trois_echecs_puis_abandon(self):
-        self.ecrire("glm/config.json", {"aimes": {"actif": True}})
-        feed = {"data": [{"id": "p1", "from": {"id": "u9"}}]}
-        for cycle in range(3):
-            gm = faux_gm(self.racine, [
-                (200, feed),
-                (500, {"error": {"code": 1, "message": "panne"}}),
-            ])
-            self.assertEqual(aimes_auto.traiter(gm, self.sauver), 1)
-        # au 4e cycle : abandonné, plus aucun appel de like
-        gm = faux_gm(self.racine, [(200, feed)])
-        self.assertEqual(aimes_auto.traiter(gm, self.sauver), 0)
-        self.assertEqual([a for a in gm.appels if "/likes" in a["url"]], [])
-        self.assertEqual(self.memo()["faits"]["p1"]["essais"], 3)
 
 
 if __name__ == "__main__":
