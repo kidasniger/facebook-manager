@@ -54,7 +54,7 @@ jobs:
   bot:
     if: github.event_name != 'schedule' && vars.GLM_LIVE != 'off'
     concurrency:
-      group: facebook-comment-processing-v2
+      group: facebook-comment-processing-v3
       cancel-in-progress: true
     runs-on: ubuntu-latest
     timeout-minutes: 350
