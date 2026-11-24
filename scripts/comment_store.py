@@ -2,6 +2,7 @@
 import json
 import os
 import tempfile
+import time
 import urllib.parse
 
 # Les scripts sont dans le dépôt public ; les données (commentaires, état, rapports, prompts)
@@ -101,9 +102,23 @@ def is_handled(entries, comment_id, source=None):
     return False
 
 
-def fetch_all(first_url, get_json, max_pages=None):
-    """Suit tous les liens paging.next (au plus max_pages pages si indiqué).
-    Ne jamais journaliser les URL (elles contiennent le jeton)."""
+def _transitoire(code, payload):
+    """Erreurs Graph/réseau récupérables sans modifier les données demandées."""
+    error = (payload or {}).get("error") if isinstance(payload, dict) else {}
+    error = error if isinstance(error, dict) else {}
+    graph_code = error.get("code")
+    return code in (0, 500, 502, 503, 504) or (code >= 500) or graph_code == 1
+
+
+def fetch_all(first_url, get_json, max_pages=None, retries=2, retry_delay=1.0,
+              sleep=time.sleep):
+    """Suit les liens paging.next et retente les pannes Graph/réseau temporaires.
+
+    Trois tentatives au total par page (premier appel + deux reprises), avec
+    temporisation exponentielle plafonnée. Les erreurs d'authentification,
+    permission, paramètres et quota ne sont jamais retentées ici.
+    Ne jamais journaliser les URL (elles contiennent le jeton).
+    """
     result = []
     url = first_url
     visited = set()
@@ -111,7 +126,19 @@ def fetch_all(first_url, get_json, max_pages=None):
         if url in visited:
             raise RuntimeError("Pagination Facebook cyclique détectée")
         visited.add(url)
-        code, payload = get_json(url)
+        code, payload = 0, {}
+        for tentative in range(max(0, retries) + 1):
+            try:
+                code, payload = get_json(url)
+            except (OSError, TimeoutError, ConnectionError) as exc:
+                code, payload = 0, {"erreur": f"{type(exc).__name__}: {str(exc)[:160]}"}
+            if code == 200 and isinstance(payload, dict) and not payload.get("error"):
+                break
+            if not _transitoire(code, payload) or tentative >= retries:
+                break
+            attente = min(8.0, max(0.0, retry_delay) * (2 ** tentative))
+            if attente:
+                sleep(attente)
         if code != 200 or not isinstance(payload, dict) or payload.get("error"):
             error = (payload or {}).get("error") or {}
             if not isinstance(error, dict):
