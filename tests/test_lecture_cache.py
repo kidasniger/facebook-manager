@@ -140,6 +140,58 @@ class LectureCacheTests(unittest.TestCase):
         self.assertEqual(80001, ctx.exception.code)
 
 
+    def test_erreur_graph_500_code_1_est_retentee_puis_reussit(self):
+        appels = []
+        pauses = []
+
+        def get_json(url):
+            appels.append(url)
+            if len(appels) < 3:
+                return 500, {"error": {"message": "An unknown error occurred", "code": 1,
+                                       "error_subcode": 99, "type": "None"}}
+            return 200, {"data": [{"id": "post-1"}]}
+
+        resultat = comment_store.fetch_all(
+            f"{GRAPH}/{PAGE}/posts", get_json,
+            retries=2, retry_delay=0.5, sleep=pauses.append,
+        )
+        self.assertEqual([{"id": "post-1"}], resultat)
+        self.assertEqual(3, len(appels))
+        self.assertEqual([0.5, 1.0], pauses)
+
+    def test_erreur_graph_500_persistante_remonte_apres_trois_tentatives(self):
+        appels = []
+        pauses = []
+
+        def get_json(url):
+            appels.append(url)
+            return 500, {"error": {"message": "An unknown error occurred", "code": 1,
+                                   "error_subcode": 99}}
+
+        with self.assertRaises(comment_store.FacebookError) as ctx:
+            comment_store.fetch_all(
+                f"{GRAPH}/{PAGE}/posts", get_json,
+                retries=2, retry_delay=0.25, sleep=pauses.append,
+            )
+        self.assertEqual(3, len(appels))
+        self.assertEqual([0.25, 0.5], pauses)
+        self.assertEqual(500, ctx.exception.status)
+        self.assertEqual(1, ctx.exception.code)
+        self.assertEqual(99, ctx.exception.subcode)
+
+    def test_erreur_permission_n_est_pas_retentee(self):
+        appels = []
+
+        def get_json(url):
+            appels.append(url)
+            return 400, {"error": {"message": "permission refusée", "code": 200}}
+
+        with self.assertRaises(comment_store.FacebookError):
+            comment_store.fetch_all(f"{GRAPH}/{PAGE}/posts", get_json,
+                                    sleep=lambda _: self.fail("pas de pause attendue"))
+        self.assertEqual(1, len(appels))
+
+
 class CacheCommentairesTests(unittest.TestCase):
     def test_structure_lue_par_l_app(self):
         posts = [{"id": "p1", "message": "Salut", "created_time": "2026-01-02", "comments": {"data": [
