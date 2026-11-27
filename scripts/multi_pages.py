@@ -16,6 +16,7 @@ import time
 
 import pages_schema as sc
 import pages_tokens as pt
+import profil_page
 
 QUOTA_IA_DEFAUT = 50   # appels GLM par Page et par jour, si aucun quota n'est fourni
 
@@ -53,7 +54,7 @@ class _Poubelle:
         pass
 
 
-def cfg_pour_page(cfg, profil):
+def cfg_pour_page(cfg, profil, maintenant=None):
     """Réglages d'une autre Page : clés techniques du bot (api_url, modele), mais ni le ton, ni
     les mots interdits, ni les posts automatiques du propriétaire d'origine."""
     base = dict(cfg or {})
@@ -63,6 +64,16 @@ def cfg_pour_page(cfg, profil):
     base["moderation"] = dict(profil["moderation"]) if isinstance(profil.get("moderation"), dict) else {}
     base.pop("horaires", None)
     base["actif"] = True
+    # Profil My Page (phase 5) : ton, réponses auto, mots interdits, heures de silence.
+    p = profil_page.nettoyer(profil)
+    if p.get("ton"):
+        base["reponses"]["ton"] = p["ton"]
+    if profil.get("reponsesAuto") is False:
+        base["reponses"]["actif"] = False
+    if p.get("motsInterdits"):
+        base["moderation"] = {"actif": True, "mots": list(p["motsInterdits"])}
+    if profil_page.en_silence(p, maintenant or dt.datetime.now(dt.timezone.utc)):
+        base["reponses"]["actif"] = False      # les commentaires attendent la fin du silence
     return base
 
 

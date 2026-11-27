@@ -18,7 +18,7 @@ concurrency:
 jobs:
   apprendre:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - name: Récupérer les données (dépôt privé)
@@ -32,6 +32,24 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           DATA_DIR: ${{ github.workspace }}/data
         run: python3 scripts/apprendre.py
+      - name: Installer cryptography (mode multi-Pages seulement)
+        if: vars.MULTI_PAGES == 'on'
+        run: python3 -m pip install --quiet "cryptography>=42"
+      - name: Apprentissage des autres Pages (multi-Pages)
+        if: vars.MULTI_PAGES == 'on'
+        continue-on-error: true
+        env:
+          FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
+          ZAI_API_KEY: ${{ secrets.ZAI_API_KEY }}
+          DATA_DIR: ${{ github.workspace }}/data
+          FB_GRAPH_VERSION: ${{ vars.FB_GRAPH_VERSION }}
+          MULTI_PAGES: ${{ vars.MULTI_PAGES || 'off' }}
+          FB_APP_ID: ${{ secrets.FB_APP_ID }}
+          FB_APP_SECRET: ${{ secrets.FB_APP_SECRET }}
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          MYPAGE_RSA_PRIVATE_KEY: ${{ secrets.MYPAGE_RSA_PRIVATE_KEY }}
+          MYPAGE_STORE_KEY: ${{ secrets.MYPAGE_STORE_KEY }}
+        run: python3 scripts/apprendre_pages.py
       - name: Enregistrer dans le dépôt privé
         uses: ./.github/actions/save-data
         with:
