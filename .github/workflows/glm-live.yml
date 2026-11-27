@@ -15,6 +15,12 @@ on:
       - "scripts/taches_periodiques.py"
       - "scripts/aimes_auto.py"
       - "scripts/sante.py"
+      - "scripts/pages_registry.py"
+      - "scripts/pages_crypto.py"
+      - "scripts/pages_tokens.py"
+      - "scripts/page_context.py"
+      - "scripts/multi_pages.py"
+      - "scripts/multi_runner.py"
       - ".github/workflows/glm-live.yml"
   workflow_dispatch:
     inputs:
@@ -86,6 +92,9 @@ jobs:
           path: data
       - name: Vérifier Python
         run: python3 --version
+      - name: Installer cryptography (mode multi-Pages seulement)
+        if: vars.MULTI_PAGES == 'on'
+        run: python3 -m pip install --quiet "cryptography>=42"
       - name: Exécuter le bot central
         id: boucle
         env:
@@ -94,6 +103,12 @@ jobs:
           ZAI_API_KEY: ${{ secrets.ZAI_API_KEY }}
           DATA_DIR: ${{ github.workspace }}/data
           FB_GRAPH_VERSION: ${{ vars.FB_GRAPH_VERSION }}
+          MULTI_PAGES: ${{ vars.MULTI_PAGES || 'off' }}
+          FB_APP_ID: ${{ secrets.FB_APP_ID }}
+          FB_APP_SECRET: ${{ secrets.FB_APP_SECRET }}
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          MYPAGE_RSA_PRIVATE_KEY: ${{ secrets.MYPAGE_RSA_PRIVATE_KEY }}
+          MYPAGE_STORE_KEY: ${{ secrets.MYPAGE_STORE_KEY }}
         run: python3 scripts/glm_boucle.py
       - name: Relancer automatiquement la session suivante
         if: steps.boucle.outcome == 'success' && steps.boucle.outputs.relance != 'non' && env.DRY_RUN != '1' && vars.GLM_LIVE != 'off'

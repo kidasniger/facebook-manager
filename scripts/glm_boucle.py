@@ -315,6 +315,47 @@ class MessagesApp:
                 self.modifie = False
             self.dernier_push = time.time()
 
+MULTI_SECONDES = max(60, int(os.environ.get("MULTI_SECONDES") or 120))
+
+
+def demarrer_multi():
+    """Mode multi-Pages (MULTI_PAGES=on). Renvoie un Runner, ou None si désactivé ou mal configuré.
+    Aucun effet sur la Page n°1 : imports paresseux, erreurs de démarrage sans secret."""
+    if os.environ.get("MULTI_PAGES", "off").strip().lower() != "on":
+        return None
+    if DRY:
+        print("Multi-Pages : ignoré en mode test.", flush=True)
+        return None
+    try:
+        import multi_runner
+        import pages_budget
+        import pages_registry
+        import pages_sync
+        import pages_tokens
+        fs = pages_registry.depuis_env()
+        ctx = pages_tokens.contexte_depuis_env(
+            os.environ, fs, lambda url: pages_registry.http_defaut("GET", url, {}, None))
+        base = os.environ.get("MULTI_DATA_DIR") or os.path.join(gm.comment_store.REPO_ROOT, "multi-data")
+        sync = pages_sync.Synchro(fs, pages_budget.BudgetEcritures())
+        runner = multi_runner.Runner(fs, ctx, base, page1_id=gm.PAGE_ID, sync=sync)
+    except ValueError as exc:   # messages fixes : nom de variable ou « illisible », jamais de valeur
+        print(f"Multi-Pages : démarrage impossible ({str(exc)[:100]}), mode désactivé.", flush=True)
+        return None
+    except Exception as exc:
+        print(f"Multi-Pages : démarrage impossible ({type(exc).__name__}), mode désactivé.", flush=True)
+        return None
+    print("Multi-Pages : activé.", flush=True)
+    return runner
+
+
+def cycle_multi(runner, cfg):
+    """Un cycle multi-Pages isolé : une erreur ici ne touche jamais la Page n°1."""
+    try:
+        runner.cycle(gm, cfg)
+    except Exception as exc:
+        print(f"Multi-Pages : erreur inattendue ({type(exc).__name__}), ignorée.", flush=True)
+
+
 def main():
     cfg = gm.jload(gm.P("glm", "config.json"), {})
     if not cfg.get("actif", True):
@@ -327,6 +368,8 @@ def main():
     lecteur = lecture_cache.LecteurCache(gm.PAGE_ID, gm.TOKEN, gm.GRAPH, lambda url: gm.http(url),
                                          balayage_minutes=BALAYAGE_MINUTES, journal=gm.log)
     cache_app = CacheApp()
+    multi = demarrer_multi()
+    derniere_multi = 0.0
     messages_app = MessagesApp(lecture_messages.LecteurMessages(
         gm.PAGE_ID, gm.TOKEN, gm.GRAPH, lambda url: gm.http(url), journal=gm.log))
     print(f"Veille démarrée ({'TEST' if DRY else 'RÉEL'}) : {DUREE // 60} min, contrôle toutes les {INTERVALLE} s, "
@@ -438,6 +481,9 @@ def main():
             sante.pousser(gm, enregistrer)
             dormir(min(300, INTERVALLE * echecs))
             continue
+        if multi is not None and time.time() - derniere_multi >= MULTI_SECONDES:
+            derniere_multi = time.time()
+            cycle_multi(multi, cfg)
         attente = pause_selon_quota(INTERVALLE)
         if attente > INTERVALLE: print(f"Quota à {gm.USAGE['pct']} % : cycle suivant dans {attente} s.", flush=True)
         dormir(attente)
